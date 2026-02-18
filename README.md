@@ -154,6 +154,19 @@ premiumtube/
 
 ---
 
+## Mobile Users
+
+PremiumTube is a Chrome extension — it runs in desktop browsers. Chrome extensions can't work inside the YouTube mobile app. Here are alternatives for mobile:
+
+| Platform | App | Features | Link |
+|----------|-----|----------|------|
+| **Android** | **ReVanced** | Ad blocking, SponsorBlock, background play, PiP — patches the official YouTube APK | [github.com/ReVanced](https://github.com/ReVanced) |
+| **Android** | **NewPipe** | Lightweight YouTube client with SponsorBlock, background play, downloads | [newpipe.net](https://newpipe.net) |
+| **Android** | **Kiwi Browser** | Mobile browser that supports Chrome extensions — install PremiumTube directly | [Play Store](https://play.google.com/store/apps/details?id=com.kiwibrowser.browser) |
+| **iOS** | **uYou+** | Modified YouTube app with ad blocking & SponsorBlock (sideload via AltStore) | [github.com/qnblackcat/uYouPlus](https://github.com/qnblackcat/uYouPlus) |
+
+---
+
 ## Permissions
 
 | Permission | Why |
