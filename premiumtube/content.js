@@ -5,7 +5,7 @@
   'use strict';
 
   const API = 'https://sponsor.ajay.app/api/skipSegments';
-  const CATEGORIES = '["intro","outro","sponsor","selfpromo"]';
+  const CATEGORIES = '["intro","outro","sponsor","selfpromo","interaction","music_offtopic","preview","filler"]';
 
   let settings = {};
   let currentVideoId = null;
@@ -23,12 +23,14 @@
 
   const LABELS = {
     intro: 'Intro', outro: 'Outro', sponsor: 'Sponsor',
-    selfpromo: 'Self-promo'
+    selfpromo: 'Self-promo', interaction: 'Reminder',
+    music_offtopic: 'Non-music', preview: 'Preview', filler: 'Filler'
   };
 
   const KEYS = {
     intro: 'skipIntro', outro: 'skipOutro', sponsor: 'skipSponsor',
-    selfpromo: 'skipSelfpromo'
+    selfpromo: 'skipSelfpromo', interaction: 'skipInteraction',
+    music_offtopic: 'skipMusicOfftopic', preview: 'skipPreview', filler: 'skipFiller'
   };
 
   // ---- Keyword lists for segment detection ----
@@ -52,6 +54,13 @@
     selfpromo: [
       'merch', 'merchandise', 'self promo', 'self-promo', 'selfpromo',
       'channel plug', 'shameless plug'
+    ],
+    interaction: [
+      'subscribe', 'like button', 'notification bell', 'leave a comment',
+      'hit the bell', 'smash the like'
+    ],
+    preview: [
+      'preview', 'recap', 'previously on', 'last time', 'quick recap'
     ]
   };
 
@@ -98,6 +107,13 @@
       'check out my merch', 'my merch store', 'buy me a coffee',
       'follow me on', 'sign up for my', 'my online course',
       'listen to my podcast'
+    ],
+    interaction: [
+      'smash that like', 'hit the like', 'drop a like', 'leave a like',
+      'smash that subscribe', 'hit the subscribe', 'click subscribe',
+      'hit the notification', 'ring the notification', 'turn on notifications',
+      'comment down below', 'leave a comment below', 'let me know in the comments',
+      'share this video', 'share with your friends'
     ]
   };
 
@@ -126,7 +142,8 @@
     }
     return {
       skipIntro: true, skipOutro: true, skipSponsor: true,
-      skipSelfpromo: true, adSkip: true,
+      skipSelfpromo: true, skipInteraction: true, skipMusicOfftopic: true,
+      skipPreview: true, skipFiller: true, adSkip: true,
       pipEnabled: true, pipAutoSwitch: false,
       backgroundPlay: true, showToasts: true, autoMaxQuality: true, isPremium: false,
       preferAV1: true, disableAmbient: true, videoSharpening: true
@@ -922,9 +939,9 @@
       const v = getVid();
       if (!v || !v.duration || v.duration === Infinity) return;
 
-      // Only for videos > 3 minutes
-      if (v.duration < 180) {
-        log('Heuristic fallback: skipped (video < 3 min)', '#aaa');
+      // Only for videos > 45 seconds
+      if (v.duration < 45) {
+        log('Heuristic fallback: skipped (video < 45s)', '#aaa');
         return;
       }
 
@@ -937,12 +954,18 @@
         return;
       }
 
+      const dur = v.duration;
       const newSegments = [];
 
-      // Intro: first 45 seconds (or 10% of video, whichever is smaller)
+      // Intro estimate — proportional to video length
       if (!hasIntro) {
-        const introEnd = Math.min(45, v.duration * 0.1);
-        if (!hasOverlap(0, introEnd)) {
+        let introEnd;
+        if (dur < 120) introEnd = Math.min(10, dur * 0.08);       // < 2 min: ~10s
+        else if (dur < 300) introEnd = Math.min(20, dur * 0.06);  // 2-5 min: ~20s
+        else if (dur < 900) introEnd = Math.min(35, dur * 0.05);  // 5-15 min: ~35s
+        else introEnd = Math.min(50, dur * 0.04);                 // 15+ min: ~50s
+
+        if (introEnd >= 5 && !hasOverlap(0, introEnd)) {
           newSegments.push({
             start: 0,
             end: introEnd,
@@ -952,13 +975,19 @@
         }
       }
 
-      // Outro: last 25 seconds (or last 10%, whichever is later)
+      // Outro estimate — proportional to video length
       if (!hasOutro) {
-        const outroStart = Math.max(v.duration - 25, v.duration * 0.9);
-        if (!hasOverlap(outroStart, v.duration)) {
+        let outroLen;
+        if (dur < 120) outroLen = Math.min(8, dur * 0.08);        // < 2 min: ~8s
+        else if (dur < 300) outroLen = Math.min(15, dur * 0.05);  // 2-5 min: ~15s
+        else if (dur < 900) outroLen = Math.min(25, dur * 0.04);  // 5-15 min: ~25s
+        else outroLen = Math.min(35, dur * 0.03);                 // 15+ min: ~35s
+
+        const outroStart = dur - outroLen;
+        if (outroLen >= 5 && !hasOverlap(outroStart, dur)) {
           newSegments.push({
             start: outroStart,
-            end: v.duration,
+            end: dur,
             category: 'outro',
             source: 'heuristic'
           });
@@ -967,15 +996,15 @@
 
       if (newSegments.length) {
         mergeSegments(newSegments);
-        log(`Heuristic fallback: added ${newSegments.length} segments (best guess)`, '#ff9f0a');
+        log(`Heuristic fallback: added ${newSegments.length} segments (estimated)`, '#ff9f0a');
         newSegments.forEach(s => {
           log(`  [heuristic] ${s.category}: ${fmtTime(s.start)} -> ${fmtTime(s.end)}`, '#ff9f0a');
         });
       }
     };
 
-    // Run last — give all other methods time to finish (8s delay)
-    const timerId = setTimeout(tryDetect, 8000);
+    // Run after other methods have had time (5s delay)
+    const timerId = setTimeout(tryDetect, 5000);
     localDetectionTimers.push(timerId);
   }
 
@@ -1135,7 +1164,8 @@
     let hit = null;
 
     for (const seg of skipSegments) {
-      if (!settings[KEYS[seg.category]]) continue;
+      const settingKey = KEYS[seg.category];
+      if (settingKey && settings[settingKey] === false) continue;
       if (t >= seg.start && t < seg.end - 0.3) {
         hit = seg;
         break;
@@ -1293,7 +1323,8 @@
       }
 
       for (const seg of skipSegments) {
-        if (!settings[KEYS[seg.category]]) continue;
+        const markerKey = KEYS[seg.category];
+        if (markerKey && settings[markerKey] === false) continue;
 
         const startPct = (seg.start / v.duration) * 100;
         const widthPct = ((seg.end - seg.start) / v.duration) * 100;

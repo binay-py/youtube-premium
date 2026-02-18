@@ -14,6 +14,10 @@ const DEFAULT_SETTINGS = {
   skipOutro: true,
   skipSponsor: true,
   skipSelfpromo: true,
+  skipInteraction: true,
+  skipMusicOfftopic: true,
+  skipPreview: true,
+  skipFiller: true,
   adSkip: true,
   pipEnabled: true,
   pipAutoSwitch: false,
@@ -76,7 +80,8 @@ async function fetchSkipSegments(videoId) {
   }
 
   const categories = JSON.stringify([
-    'intro', 'outro', 'sponsor', 'selfpromo'
+    'intro', 'outro', 'sponsor', 'selfpromo',
+    'interaction', 'music_offtopic', 'preview', 'filler'
   ]);
 
   const url = `${SPONSORBLOCK_API}?videoID=${videoId}&categories=${encodeURIComponent(categories)}`;

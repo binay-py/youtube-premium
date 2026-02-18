@@ -23,10 +23,14 @@ ytd-in-feed-ad-layout-renderer,
    CATEGORY COLOR TOKENS
    ========================================================================= */
 
-#pt-skip-button[data-category="sponsor"]  { --pt-c: #ff9f0a; --pt-glow: rgba(255,159,10,0.25); --pt-soft: rgba(255,159,10,0.08); }
-#pt-skip-button[data-category="intro"]    { --pt-c: #5ac8fa; --pt-glow: rgba(90,200,250,0.25);  --pt-soft: rgba(90,200,250,0.08);  }
-#pt-skip-button[data-category="outro"]    { --pt-c: #bf5af2; --pt-glow: rgba(191,90,242,0.25);  --pt-soft: rgba(191,90,242,0.08);  }
-#pt-skip-button[data-category="selfpromo"]{ --pt-c: #ff375f; --pt-glow: rgba(255,55,95,0.25);   --pt-soft: rgba(255,55,95,0.08);   }
+#pt-skip-button[data-category="sponsor"]       { --pt-c: #ff9f0a; --pt-glow: rgba(255,159,10,0.25); --pt-soft: rgba(255,159,10,0.08); }
+#pt-skip-button[data-category="intro"]         { --pt-c: #5ac8fa; --pt-glow: rgba(90,200,250,0.25);  --pt-soft: rgba(90,200,250,0.08);  }
+#pt-skip-button[data-category="outro"]         { --pt-c: #bf5af2; --pt-glow: rgba(191,90,242,0.25);  --pt-soft: rgba(191,90,242,0.08);  }
+#pt-skip-button[data-category="selfpromo"]     { --pt-c: #ff375f; --pt-glow: rgba(255,55,95,0.25);   --pt-soft: rgba(255,55,95,0.08);   }
+#pt-skip-button[data-category="interaction"]   { --pt-c: #30d158; --pt-glow: rgba(48,209,88,0.25);   --pt-soft: rgba(48,209,88,0.08);   }
+#pt-skip-button[data-category="music_offtopic"]{ --pt-c: #64d2ff; --pt-glow: rgba(100,210,255,0.25); --pt-soft: rgba(100,210,255,0.08); }
+#pt-skip-button[data-category="preview"]       { --pt-c: #ffd60a; --pt-glow: rgba(255,214,10,0.25);  --pt-soft: rgba(255,214,10,0.08);  }
+#pt-skip-button[data-category="filler"]        { --pt-c: #ac8e68; --pt-glow: rgba(172,142,104,0.25); --pt-soft: rgba(172,142,104,0.08); }
 
 /* =========================================================================
    SKIP BUTTON
@@ -183,10 +187,14 @@ ytd-in-feed-ad-layout-renderer,
   opacity: 0.9 !important;
 }
 
-.pt-seekbar-marker[data-category="sponsor"]   { background: #ff9f0a !important; }
-.pt-seekbar-marker[data-category="intro"]     { background: #5ac8fa !important; }
-.pt-seekbar-marker[data-category="outro"]     { background: #bf5af2 !important; }
-.pt-seekbar-marker[data-category="selfpromo"] { background: #ff375f !important; }
+.pt-seekbar-marker[data-category="sponsor"]        { background: #ff9f0a !important; }
+.pt-seekbar-marker[data-category="intro"]          { background: #5ac8fa !important; }
+.pt-seekbar-marker[data-category="outro"]          { background: #bf5af2 !important; }
+.pt-seekbar-marker[data-category="selfpromo"]      { background: #ff375f !important; }
+.pt-seekbar-marker[data-category="interaction"]    { background: #30d158 !important; }
+.pt-seekbar-marker[data-category="music_offtopic"] { background: #64d2ff !important; }
+.pt-seekbar-marker[data-category="preview"]        { background: #ffd60a !important; }
+.pt-seekbar-marker[data-category="filler"]         { background: #ac8e68 !important; }
 
 /* =========================================================================
    TOAST NOTIFICATION
