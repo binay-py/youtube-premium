@@ -513,6 +513,7 @@
     .card:nth-child(2) { animation-delay: 0.1s; }
     .card:nth-child(3) { animation-delay: 0.15s; }
     .card:nth-child(4) { animation-delay: 0.2s; }
+    .card:nth-child(5) { animation-delay: 0.25s; }
 
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -570,7 +571,10 @@
       <div class="row"><div class="row-info"><h3>Skip Outros</h3><p>Skip end screens and outro segments</p></div><label class="toggle"><input type="checkbox" data-setting="skipOutro"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Skip Sponsors</h3><p>Skip sponsored segments (SponsorBlock)</p></div><label class="toggle"><input type="checkbox" data-setting="skipSponsor"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Skip Self-Promotion</h3><p>Merch mentions, channel promos</p></div><label class="toggle"><input type="checkbox" data-setting="skipSelfpromo"><span class="track"></span></label></div>
-      <div class="row"><div class="row-info"><h3>Toast Notifications</h3><p>Show alert when a segment is skipped</p></div><label class="toggle"><input type="checkbox" data-setting="showToasts"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Reminders</h3><p>Subscribe &amp; like prompts</p></div><label class="toggle"><input type="checkbox" data-setting="skipInteraction"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Filler</h3><p>Tangents &amp; off-topic content</p></div><label class="toggle"><input type="checkbox" data-setting="skipFiller"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Preview / Recap</h3><p>Recaps &amp; previews of upcoming content</p></div><label class="toggle"><input type="checkbox" data-setting="skipPreview"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Non-music</h3><p>Talking segments in music videos</p></div><label class="toggle"><input type="checkbox" data-setting="skipMusicOfftopic"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Ad Blocking</h3><p>Automatically detect and skip video ads</p></div><label class="toggle"><input type="checkbox" data-setting="adSkip"><span class="track"></span></label></div>
     </div>
 
@@ -580,9 +584,22 @@
         <h2>Playback</h2>
         <span class="tag tag-free">Free</span>
       </div>
+      <div class="row"><div class="row-info"><h3>Max Quality</h3><p>Always set highest available resolution</p></div><label class="toggle"><input type="checkbox" data-setting="autoMaxQuality"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Picture-in-Picture</h3><p>Toggle PiP with Alt+P keyboard shortcut</p></div><label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Auto PiP on Tab Switch</h3><p>Automatically enter PiP when leaving the tab</p></div><label class="toggle"><input type="checkbox" data-setting="pipAutoSwitch"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Background Play</h3><p>Keep audio playing when the tab is hidden</p></div><label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Toast Notifications</h3><p>Show alert when a segment is skipped</p></div><label class="toggle"><input type="checkbox" data-setting="showToasts"><span class="track"></span></label></div>
+    </div>
+
+    <!-- Video Enhancement -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Video Enhancement</h2>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="row"><div class="row-info"><h3>Prefer AV1 Codec</h3><p>Better quality at the same bitrate</p></div><label class="toggle"><input type="checkbox" data-setting="preferAV1"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Disable Ambient Mode</h3><p>Remove glow &amp; HDR dimming effect</p></div><label class="toggle"><input type="checkbox" data-setting="disableAmbient"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Video Sharpening</h3><p>Subtle clarity boost via CSS filter</p></div><label class="toggle"><input type="checkbox" data-setting="videoSharpening"><span class="track"></span></label></div>
     </div>
 
     <!-- Premium -->

@@ -16,6 +16,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const seconds = Math.round(stats.timeSaved || 0);
   timeSavedEl.textContent = seconds >= 60 ? Math.floor(seconds / 60) + 'm' : seconds + 's';
 
+  // Collapsible "More" buttons
+  document.querySelectorAll('.more-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const isOpen = target.classList.toggle('open');
+      btn.classList.toggle('open', isOpen);
+      btn.querySelector('span').textContent = isOpen
+        ? btn.dataset.target === 'more-skip' ? 'Less skip options' : 'Less options'
+        : btn.dataset.target === 'more-skip' ? 'More skip options' : 'More options';
+    });
+  });
+
   // Apply toggles
   toggles.forEach(toggle => {
     const key = toggle.dataset.setting;

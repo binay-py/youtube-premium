@@ -202,7 +202,7 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "||fonts.googleapis.com/s/roboto",
+      "urlFilter": "fonts.googleapis.com/s/roboto",
       "initiatorDomains": ["doubleclick.net", "googlesyndication.com"],
       "resourceTypes": ["font", "stylesheet", "other"]
     }

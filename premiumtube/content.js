@@ -151,7 +151,18 @@
   }
 
   chrome.storage.onChanged.addListener((c) => {
-    for (const [k, { newValue }] of Object.entries(c)) settings[k] = newValue;
+    for (const [k, { newValue }] of Object.entries(c)) {
+      const oldVal = settings[k];
+      settings[k] = newValue;
+
+      // React to feature toggles that need setup/teardown
+      if (k === 'adSkip' && newValue && !oldVal) setupAdBlocker();
+      if (k === 'disableAmbient' && newValue) disableAmbientMode();
+      if (k === 'disableAmbient' && !newValue) removeAmbientDisable();
+      if (k === 'videoSharpening' && newValue) applySharpening();
+      if (k === 'videoSharpening' && !newValue) removeSharpening();
+      if (k === 'autoMaxQuality' && newValue) applyMaxQuality();
+    }
   });
 
   // ==================== LOGGING ====================
@@ -219,6 +230,7 @@
   // ==================== AD BLOCKER ====================
 
   let adHandlerActive = false; // guard against concurrent handlers
+  let adBlockerInitialized = false; // guard against duplicate setup
 
   function isAdPlaying() {
     const player = getPlayer();
@@ -231,6 +243,8 @@
 
   function setupAdBlocker() {
     if (settings.adSkip === false) return;
+    if (adBlockerInitialized) return;
+    adBlockerInitialized = true;
 
     log('Ad blocker enabled', '#30d158');
 
@@ -370,7 +384,11 @@
     v.muted = true;
 
     // Try clicking skip button immediately
-    if (tryClickSkip()) { adHandlerActive = false; return; }
+    if (tryClickSkip()) {
+      v.muted = false;
+      adHandlerActive = false;
+      return;
+    }
 
     // Keep trying every 250ms
     let attempts = 0;
@@ -1150,8 +1168,14 @@
   }
 
   let logTick = 0;
+  let lastCheckTime = 0;
 
   function check() {
+    // Throttle: skip if called again within 150ms (prevents double-fire from interval + event)
+    const now = performance.now();
+    if (now - lastCheckTime < 150) return;
+    lastCheckTime = now;
+
     const v = getVid();
     if (!v) return;
 
@@ -1298,12 +1322,18 @@
     }
     if (activeBtn) {
       activeBtn.classList.remove('pt-visible');
-      const e = activeBtn;
-      setTimeout(() => e.remove(), 300);
+      const fadingEl = activeBtn;
       activeBtn = null;
       activeSeg = null;
+      // Remove stale orphaned buttons (but not the one currently fading)
+      document.querySelectorAll('#pt-skip-button').forEach(e => {
+        if (e !== fadingEl) e.remove();
+      });
+      setTimeout(() => fadingEl.remove(), 300);
+    } else {
+      // No active button, just clean up any orphans
+      document.querySelectorAll('#pt-skip-button').forEach(e => e.remove());
     }
-    document.querySelectorAll('#pt-skip-button').forEach(e => e.remove());
   }
 
   // ==================== SEEKBAR MARKERS ====================
@@ -1532,8 +1562,7 @@
       clearInterval(qualityTimer); qualityTimer = null;
     };
 
-    // Try immediately, then every 500ms
-    trySet();
+    // Try via interval only (avoids race with immediate call)
     qualityTimer = setInterval(trySet, 500);
   }
 
@@ -1568,6 +1597,12 @@
     log('Ambient mode disabled', '#5ac8fa');
   }
 
+  function removeAmbientDisable() {
+    const el = document.getElementById('pt-ambient-disable-css');
+    if (el) el.remove();
+    log('Ambient mode re-enabled', '#5ac8fa');
+  }
+
   // --- CSS Sharpening Filter ---
 
   function applySharpening() {
@@ -1598,6 +1633,14 @@
     `;
     document.head.appendChild(style);
     log('Video sharpening enabled', '#5ac8fa');
+  }
+
+  function removeSharpening() {
+    const svg = document.getElementById('pt-sharpen-svg');
+    const css = document.getElementById('pt-sharpen-css');
+    if (svg) svg.remove();
+    if (css) css.remove();
+    log('Video sharpening disabled', '#5ac8fa');
   }
 
   // --- Force AV1 Codec ---
