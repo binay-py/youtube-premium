@@ -1,6 +1,25 @@
 /* PremiumTube - Injected into YouTube */
 
 /* =========================================================================
+   AD BLOCKER - Hide YouTube ad containers
+   ========================================================================= */
+
+#player-ads,
+#masthead-ad,
+ytd-ad-slot-renderer,
+ytd-banner-promo-renderer,
+ytd-promoted-sparkles-web-renderer,
+.ytp-ad-overlay-container,
+.ytp-ad-text-overlay,
+#ad-text,
+.ytd-mealbar-promo-renderer,
+.ytp-ad-message-container,
+ytd-in-feed-ad-layout-renderer,
+#related ytd-promoted-video-renderer {
+  display: none !important;
+}
+
+/* =========================================================================
    CATEGORY COLOR TOKENS
    ========================================================================= */
 

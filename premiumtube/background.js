@@ -14,13 +14,13 @@ const DEFAULT_SETTINGS = {
   skipOutro: true,
   skipSponsor: true,
   skipSelfpromo: true,
+  adSkip: true,
   pipEnabled: true,
   pipAutoSwitch: false,
   backgroundPlay: true,
   showToasts: true,
 
   // Phase 2 - Premium features
-  adSkip: false,
   theaterDefault: false,
   removeShorts: false,
 
