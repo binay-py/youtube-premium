@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   timeSavedEl.textContent = seconds >= 60 ? Math.floor(seconds / 60) + 'm' : seconds + 's';
 
   // Collapsible "More" buttons
-  document.querySelectorAll('.more-btn').forEach(btn => {
+  document.querySelectorAll('.expand-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.target;
       const target = document.getElementById(targetId);

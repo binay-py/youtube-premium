@@ -5,66 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PremiumTube</title>
   <style>
-    :root {
-      --bg: #0b0b0f;
-      --surface: #14141a;
-      --surface2: #1c1c24;
-      --surface3: #24242e;
-      --border: #2a2a35;
-      --text: #eeeef0;
-      --text2: #a0a0b0;
-      --text3: #606070;
-      --red: #ff2d55;
-      --red2: #e6264d;
-      --red-soft: rgba(255, 45, 85, 0.1);
-      --red-glow: rgba(255, 45, 85, 0.2);
-      --blue: #5ac8fa;
-      --blue-soft: rgba(90, 200, 250, 0.08);
-      --green: #30d158;
-      --green-soft: rgba(48, 209, 88, 0.08);
-      --purple: #bf5af2;
-      --purple-soft: rgba(191, 90, 242, 0.08);
-    }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      width: 360px;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      width: 364px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #111113;
+      color: #e8e8ed;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
     }
 
-    /* ===== HERO HEADER ===== */
-    .hero {
+    /* ===== HEADER ===== */
+    .header {
+      padding: 18px 18px 0;
       position: relative;
-      padding: 20px 20px 16px;
       overflow: hidden;
     }
 
-    .hero::before {
+    .header::before {
       content: '';
       position: absolute;
-      top: -60%;
-      left: -20%;
-      width: 140%;
-      height: 200%;
-      background: radial-gradient(ellipse at 30% 20%, rgba(255, 45, 85, 0.12) 0%, transparent 60%),
-                  radial-gradient(ellipse at 80% 60%, rgba(90, 200, 250, 0.06) 0%, transparent 50%);
+      top: -30px;
+      left: -20px;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%);
       pointer-events: none;
     }
 
-    .hero-top {
+    .header-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: relative;
       margin-bottom: 14px;
     }
 
-    .hero-brand {
+    .brand {
       display: flex;
       align-items: center;
       gap: 11px;
@@ -73,152 +49,165 @@
     .logo {
       width: 38px;
       height: 38px;
-      background: linear-gradient(135deg, var(--red) 0%, #cc1e44 100%);
-      border-radius: 11px;
+      background: linear-gradient(135deg, #ff3d3d 0%, #dc2626 100%);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 3px 12px var(--red-glow);
+      box-shadow: 0 0 20px rgba(239,68,68,0.5), 0 0 40px rgba(239,68,68,0.15);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes logoPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(239,68,68,0.5), 0 0 40px rgba(239,68,68,0.15); }
+      50% { box-shadow: 0 0 25px rgba(239,68,68,0.6), 0 0 50px rgba(239,68,68,0.2); }
     }
 
     .logo svg { width: 18px; height: 18px; fill: #fff; }
 
-    .brand h1 {
+    .brand-text h1 {
       font-size: 16px;
-      font-weight: 800;
+      font-weight: 750;
       letter-spacing: -0.4px;
-      background: linear-gradient(135deg, var(--text) 0%, var(--text2) 100%);
+      background: linear-gradient(90deg, #ffffff 0%, #c0c0cc 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    .brand p {
-      font-size: 10px;
-      color: var(--text3);
-      font-weight: 500;
-      margin-top: 1px;
+    .brand-text span {
+      font-size: 11px;
+      color: #64646e;
+      font-weight: 450;
     }
 
-    .status-pill {
+    .online {
       display: flex;
       align-items: center;
-      gap: 5px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      padding: 5px 11px;
-      border-radius: 20px;
-      font-size: 10px;
+      gap: 6px;
+      font-size: 11px;
       font-weight: 600;
-      color: var(--text2);
+      color: #4ade80;
+      text-shadow: 0 0 10px rgba(74,222,128,0.4);
     }
 
-    .status-dot {
-      width: 6px;
-      height: 6px;
+    .online::before {
+      content: '';
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
-      animation: pulse-dot 2s ease-in-out infinite;
+      background: #4ade80;
+      box-shadow: 0 0 8px rgba(74,222,128,0.7);
+      animation: blink 2s infinite;
     }
 
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
+    @keyframes blink { 50% { opacity: .35; } }
 
-    /* Stats row */
+    /* ===== STATS ===== */
     .stats {
-      display: flex;
-      gap: 8px;
-      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 0 18px 14px;
     }
 
     .stat {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 12px 6px 10px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #1e1e24;
     }
 
-    .stat-value {
-      font-size: 18px;
+    .stat::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+    }
+
+    .stat:nth-child(1) { border-top: 2px solid #ef4444; }
+    .stat:nth-child(2) { border-top: 2px solid #3b82f6; }
+    .stat:nth-child(3) { border-top: 2px solid #22c55e; }
+
+    .stat:nth-child(1)::before { background: linear-gradient(180deg, rgba(239,68,68,0.12) 0%, transparent 70%); }
+    .stat:nth-child(2)::before { background: linear-gradient(180deg, rgba(59,130,246,0.12) 0%, transparent 70%); }
+    .stat:nth-child(3)::before { background: linear-gradient(180deg, rgba(34,197,94,0.12) 0%, transparent 70%); }
+
+    .stat:nth-child(1) { border-top-color: #f87171; box-shadow: 0 0 15px rgba(239,68,68,0.1); }
+    .stat:nth-child(2) { border-top-color: #60a5fa; box-shadow: 0 0 15px rgba(59,130,246,0.1); }
+    .stat:nth-child(3) { border-top-color: #4ade80; box-shadow: 0 0 15px rgba(34,197,94,0.1); }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: -0.5px;
-      line-height: 1.2;
+      line-height: 1;
+      position: relative;
     }
 
-    .stat-value.red { color: var(--red); }
-    .stat-value.blue { color: var(--blue); }
-    .stat-value.green { color: var(--green); }
+    .stat:nth-child(1) strong { color: #f87171; text-shadow: 0 0 15px rgba(248,113,113,0.4); }
+    .stat:nth-child(2) strong { color: #60a5fa; text-shadow: 0 0 15px rgba(96,165,250,0.4); }
+    .stat:nth-child(3) strong { color: #4ade80; text-shadow: 0 0 15px rgba(74,222,128,0.4); }
 
-    .stat-label {
-      font-size: 9px;
-      color: var(--text3);
+    .stat small {
+      display: block;
+      font-size: 8.5px;
       font-weight: 600;
+      color: #55555f;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-top: 2px;
+      margin-top: 4px;
+      position: relative;
     }
 
-    /* ===== SECTIONS ===== */
-    .sections {
-      padding: 6px 12px;
+    /* ===== DIVIDER ===== */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.15) 30%, rgba(59,130,246,0.15) 70%, transparent 100%);
+      margin: 4px 18px;
     }
 
-    .section {
-      margin-bottom: 6px;
-    }
-
-    .section-head {
+    /* ===== SECTION ===== */
+    .section-label {
+      padding: 12px 18px 6px;
+      font-size: 10.5px;
+      font-weight: 650;
+      color: #6b6b78;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 8px 8px 4px;
+      gap: 8px;
     }
 
-    .section-title {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text3);
+    .section-label::before {
+      content: '';
+      width: 3px;
+      height: 12px;
+      border-radius: 2px;
     }
 
-    .section-tag {
-      font-size: 8px;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 4px;
-      letter-spacing: 0.6px;
-    }
+    .section-label:first-of-type::before { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+    .section-label:last-of-type::before { background: #3b82f6; box-shadow: 0 0 8px rgba(59,130,246,0.5); }
 
-    .tag-free { background: var(--green-soft); color: var(--green); }
-
-    /* ===== FEATURE ROW ===== */
+    /* ===== ROW ===== */
     .row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 8px 8px;
-      border-radius: 10px;
-      transition: background 0.15s;
-      gap: 10px;
+      gap: 12px;
+      padding: 9px 18px;
+      transition: background 0.12s;
     }
 
-    .row:hover { background: var(--surface); }
+    .row:hover { background: rgba(255,255,255,0.03); }
+    .row:hover .ico-r { box-shadow: 0 0 18px rgba(239,68,68,0.2); }
+    .row:hover .ico-b { box-shadow: 0 0 18px rgba(59,130,246,0.2); }
 
-    .row-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .row-icon {
-      width: 34px;
-      height: 34px;
+    .ico {
+      width: 36px;
+      height: 36px;
       border-radius: 9px;
       display: flex;
       align-items: center;
@@ -226,356 +215,302 @@
       flex-shrink: 0;
     }
 
-    .row-icon svg { width: 16px; height: 16px; }
+    .ico svg { width: 17px; height: 17px; }
 
-    .ic-red { background: var(--red-soft); }
-    .ic-red svg { fill: var(--red); }
-    .ic-blue { background: var(--blue-soft); }
-    .ic-blue svg { fill: var(--blue); }
-    .ic-purple { background: var(--purple-soft); }
-    .ic-purple svg { fill: var(--purple); }
-    .ic-green { background: var(--green-soft); }
-    .ic-green svg { fill: var(--green); }
+    .ico-r { background: #2a1219; border: 1px solid #3d1a24; box-shadow: 0 0 12px rgba(239,68,68,0.12); }
+    .ico-r svg { fill: #f87171; filter: drop-shadow(0 0 4px rgba(248,113,113,0.35)); }
 
-    .row-text { min-width: 0; }
+    .ico-b { background: #111d38; border: 1px solid #17264a; box-shadow: 0 0 12px rgba(59,130,246,0.12); }
+    .ico-b svg { fill: #60a5fa; filter: drop-shadow(0 0 4px rgba(96,165,250,0.35)); }
 
-    .row-text h3 {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text);
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .info { flex: 1; min-width: 0; }
+
+    .info h3 {
+      font-size: 13px;
+      font-weight: 590;
+      line-height: 1.25;
+      color: #e8e8ed;
     }
 
-    .row-text p {
-      font-size: 10px;
-      color: var(--text3);
+    .info p {
+      font-size: 10.5px;
+      color: #55555f;
       margin-top: 1px;
     }
 
-    /* ===== COMPACT ROW (for collapsible sections) ===== */
-    .compact-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 8px 6px 52px;
-      border-radius: 8px;
-      transition: background 0.15s;
-      gap: 10px;
-    }
-
-    .compact-row:hover { background: var(--surface); }
-
-    .compact-row h3 {
-      font-size: 11.5px;
-      font-weight: 500;
-      color: var(--text2);
-      white-space: nowrap;
-    }
-
     /* ===== TOGGLE ===== */
-    .toggle {
+    .sw {
       position: relative;
       width: 40px;
-      height: 24px;
+      height: 22px;
       flex-shrink: 0;
     }
 
-    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .sw input { position: absolute; opacity: 0; width: 0; height: 0; }
 
-    .track {
+    .sl {
       position: absolute;
       inset: 0;
-      background: var(--surface3);
-      border-radius: 12px;
+      background: #2c2c34;
+      border-radius: 11px;
       cursor: pointer;
-      transition: background 0.25s;
+      transition: background 0.2s;
     }
 
-    .track::after {
+    .sl::after {
       content: '';
       position: absolute;
-      left: 3px;
-      top: 3px;
+      top: 2px;
+      left: 2px;
       width: 18px;
       height: 18px;
-      background: var(--text3);
+      background: #606068;
       border-radius: 50%;
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      transition: transform 0.2s cubic-bezier(.4,0,.2,1), background 0.15s;
     }
 
-    .toggle input:checked + .track {
-      background: var(--red);
-      box-shadow: 0 0 10px var(--red-glow);
+    .sw input:checked + .sl {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 0 14px rgba(239,68,68,0.4);
     }
 
-    .toggle input:checked + .track::after {
-      transform: translateX(16px);
+    .sw input:checked + .sl::after {
+      transform: translateX(18px);
       background: #fff;
     }
 
-    .toggle input:disabled + .track {
-      opacity: 0.25;
-      cursor: not-allowed;
-    }
-
-    /* ===== MORE BUTTON ===== */
-    .more-btn {
+    /* ===== COMPACT ROW ===== */
+    .sub-row {
       display: flex;
       align-items: center;
-      gap: 5px;
-      padding: 5px 8px;
-      margin: 2px 0 2px 8px;
+      justify-content: space-between;
+      padding: 7px 18px 7px 65px;
+      transition: background 0.12s;
+    }
+
+    .sub-row:hover { background: #18181d; }
+
+    .sub-row span {
+      font-size: 12px;
+      font-weight: 480;
+      color: #9898a2;
+    }
+
+    /* ===== EXPAND ===== */
+    .more {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      padding: 8px 18px;
       background: none;
       border: none;
-      color: var(--text3);
-      font-size: 10px;
-      font-weight: 600;
+      color: #55555f;
+      font: 600 10.5px/1 inherit;
       cursor: pointer;
-      font-family: inherit;
       transition: color 0.15s;
     }
 
-    .more-btn:hover { color: var(--text2); }
+    .more:hover { color: #88888f; }
 
-    .more-btn svg {
-      width: 12px;
-      height: 12px;
+    .more svg {
+      width: 16px;
+      height: 16px;
       fill: currentColor;
-      transition: transform 0.25s ease;
+      transition: transform 0.2s;
     }
 
-    .more-btn.open svg { transform: rotate(180deg); }
+    .more.open svg { transform: rotate(180deg); }
 
-    .collapsible {
+    .fold {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease;
+      transition: max-height 0.25s ease;
     }
 
-    .collapsible.open {
-      max-height: 500px;
-    }
-
-    /* ===== DIVIDER ===== */
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
-      margin: 4px 20px;
-    }
+    .fold.open { max-height: 400px; }
 
     /* ===== FOOTER ===== */
-    .footer {
-      padding: 8px 14px 14px;
+    .foot {
+      padding: 10px 18px 16px;
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
     }
 
-    .btn {
+    .foot button {
       flex: 1;
-      padding: 11px;
-      border: none;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
+      padding: 10px;
+      background: linear-gradient(180deg, #1e1e24 0%, #1a1a1f 100%);
+      border: 1px solid #2a2a32;
+      border-radius: 9px;
+      color: #e8e8ed;
+      font: 600 12px/1 inherit;
       cursor: pointer;
-      font-family: inherit;
-      transition: filter 0.15s, transform 0.1s;
-      text-align: center;
-      letter-spacing: -0.1px;
+      transition: all 0.15s;
     }
 
-    .btn:hover { filter: brightness(1.15); }
-    .btn:active { transform: scale(0.97); }
+    .foot button:hover { background: #242428; border-color: #3a3a42; box-shadow: 0 0 10px rgba(255,255,255,0.04); }
+    .foot button:active { transform: scale(0.98); }
 
-    .btn-settings {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+    .foot small { font-size: 10px; color: #55555f; }
 
-    /* ===== LOAD ANIMATION ===== */
-    .row, .compact-row { opacity: 0; animation: fadeSlide 0.3s ease forwards; }
-    .row:nth-child(1), .compact-row:nth-child(1) { animation-delay: 0.02s; }
-    .row:nth-child(2), .compact-row:nth-child(2) { animation-delay: 0.04s; }
-    .row:nth-child(3), .compact-row:nth-child(3) { animation-delay: 0.06s; }
-    .row:nth-child(4), .compact-row:nth-child(4) { animation-delay: 0.08s; }
-    .row:nth-child(5), .compact-row:nth-child(5) { animation-delay: 0.10s; }
+    /* ===== ENTRANCE ===== */
+    .row, .sub-row { opacity: 0; animation: enter .3s ease forwards; }
+    .row:nth-child(2) { animation-delay: .02s; }
+    .row:nth-child(3) { animation-delay: .04s; }
+    .row:nth-child(4) { animation-delay: .06s; }
+    .row:nth-child(5) { animation-delay: .08s; }
+    .row:nth-child(6) { animation-delay: .10s; }
+    .row:nth-child(7) { animation-delay: .12s; }
+    .row:nth-child(8) { animation-delay: .14s; }
+    .row:nth-child(9) { animation-delay: .16s; }
 
-    @keyframes fadeSlide {
-      from { opacity: 0; transform: translateY(6px); }
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
-  <!-- Hero Header -->
-  <div class="hero">
-    <div class="hero-top">
-      <div class="hero-brand">
-        <div class="logo">
-          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        </div>
-        <div class="brand">
+  <div class="header">
+    <div class="header-row">
+      <div class="brand">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        <div class="brand-text">
           <h1>PremiumTube</h1>
-          <p>YouTube Premium Alternative</p>
+          <span>YouTube Premium Features</span>
         </div>
       </div>
-      <div class="status-pill">
-        <span class="status-dot"></span>
-        <span id="featureCount">0 on</span>
-      </div>
-    </div>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value red" id="segmentsSkipped">0</div>
-        <div class="stat-label">Skipped</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value blue" id="timeSaved">0s</div>
-        <div class="stat-label">Time saved</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value green" id="sessionActive">Active</div>
-        <div class="stat-label">Status</div>
-      </div>
+      <div class="online" id="featureCount">0 on</div>
     </div>
   </div>
 
-  <!-- Feature Sections -->
-  <div class="sections">
-
-    <!-- Skip & Ads -->
-    <div class="section">
-      <div class="section-head">
-        <span class="section-title">Skip &amp; Ads</span>
-        <span class="section-tag tag-free">Free</span>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div>
-          <div class="row-text"><h3>Skip Intros</h3><p>Video intro sequences</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="skipIntro"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div>
-          <div class="row-text"><h3>Skip Outros</h3><p>End screens &amp; credits</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="skipOutro"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
-          <div class="row-text"><h3>Skip Sponsors</h3><p>SponsorBlock powered</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="skipSponsor"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg></div>
-          <div class="row-text"><h3>Ad Blocking</h3><p>Auto-skip video ads</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="adSkip"><span class="track"></span></label>
-      </div>
-
-      <button class="more-btn" data-target="more-skip">
-        <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-        <span>More skip options</span>
-      </button>
-
-      <div class="collapsible" id="more-skip">
-        <div class="compact-row">
-          <h3>Self-promo</h3>
-          <label class="toggle"><input type="checkbox" data-setting="skipSelfpromo"><span class="track"></span></label>
-        </div>
-        <div class="compact-row">
-          <h3>Reminders</h3>
-          <label class="toggle"><input type="checkbox" data-setting="skipInteraction"><span class="track"></span></label>
-        </div>
-        <div class="compact-row">
-          <h3>Filler</h3>
-          <label class="toggle"><input type="checkbox" data-setting="skipFiller"><span class="track"></span></label>
-        </div>
-        <div class="compact-row">
-          <h3>Preview / Recap</h3>
-          <label class="toggle"><input type="checkbox" data-setting="skipPreview"><span class="track"></span></label>
-        </div>
-        <div class="compact-row">
-          <h3>Non-music</h3>
-          <label class="toggle"><input type="checkbox" data-setting="skipMusicOfftopic"><span class="track"></span></label>
-        </div>
-      </div>
+  <div class="stats">
+    <div class="stat">
+      <strong id="segmentsSkipped">0</strong>
+      <small>Skipped</small>
     </div>
-
-    <div class="divider"></div>
-
-    <!-- Quality & Playback -->
-    <div class="section">
-      <div class="section-head">
-        <span class="section-title">Quality &amp; Playback</span>
-        <span class="section-tag tag-free">Free</span>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 14H5V6h14v12zm-7-1h2v-4h4v-2h-4V7h-2v4H8v2h4z"/></svg></div>
-          <div class="row-text"><h3>Max Quality</h3><p>Always highest resolution</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="autoMaxQuality"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 7h-8v6H5v-4H3v10h2v-4h14v4h2V3h-2v4zm-2 8H7v-2h10v2z"/></svg></div>
-          <div class="row-text"><h3>Picture-in-Picture</h3><p>Alt+P shortcut</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg></div>
-          <div class="row-text"><h3>Background Play</h3><p>Audio continues in background</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label>
-      </div>
-
-      <button class="more-btn" data-target="more-quality">
-        <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-        <span>More options</span>
-      </button>
-
-      <div class="collapsible" id="more-quality">
-        <div class="compact-row">
-          <h3>Auto-dismiss Popups</h3>
-          <label class="toggle"><input type="checkbox" data-setting="autoDismissPopups"><span class="track"></span></label>
-        </div>
-        <div class="compact-row">
-          <h3>Hide Premium Ads</h3>
-          <label class="toggle"><input type="checkbox" data-setting="hidePremiumUpsells"><span class="track"></span></label>
-        </div>
-        <div class="compact-row">
-          <h3>Continuous Play</h3>
-          <label class="toggle"><input type="checkbox" data-setting="continuousPlay"><span class="track"></span></label>
-        </div>
-      </div>
+    <div class="stat">
+      <strong id="timeSaved">0s</strong>
+      <small>Time saved</small>
     </div>
-
+    <div class="stat">
+      <strong id="sessionActive">Active</strong>
+      <small>Status</small>
+    </div>
   </div>
 
-  <!-- Footer -->
-  <div class="footer">
-    <button class="btn btn-settings" id="openSettings">Settings</button>
+  <div class="divider"></div>
+
+  <div class="section-label">Skip & Ads</div>
+
+  <div class="row">
+    <div class="ico ico-r"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div>
+    <div class="info"><h3>Skip Intros</h3><p>Video intro sequences</p></div>
+    <label class="sw"><input type="checkbox" data-setting="skipIntro"><span class="sl"></span></label>
+  </div>
+
+  <div class="row">
+    <div class="ico ico-r"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></div>
+    <div class="info"><h3>Skip Outros</h3><p>End screens & credits</p></div>
+    <label class="sw"><input type="checkbox" data-setting="skipOutro"><span class="sl"></span></label>
+  </div>
+
+  <div class="row">
+    <div class="ico ico-r"><svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.04 2.21 11.53 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .53.21 1.04.59 1.41l9 9c.36.36.86.59 1.41.59s1.05-.23 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg></div>
+    <div class="info"><h3>Skip Sponsors</h3><p>SponsorBlock powered</p></div>
+    <label class="sw"><input type="checkbox" data-setting="skipSponsor"><span class="sl"></span></label>
+  </div>
+
+  <div class="row">
+    <div class="ico ico-r"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div>
+    <div class="info"><h3>Ad Blocking</h3><p>Auto-skip video ads</p></div>
+    <label class="sw"><input type="checkbox" data-setting="adSkip"><span class="sl"></span></label>
+  </div>
+
+  <button class="more expand-btn" data-target="more-skip">
+    <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+    <span>More skip options</span>
+  </button>
+
+  <div class="fold" id="more-skip">
+    <div class="sub-row">
+      <span>Self-promo</span>
+      <label class="sw"><input type="checkbox" data-setting="skipSelfpromo"><span class="sl"></span></label>
+    </div>
+    <div class="sub-row">
+      <span>Reminders</span>
+      <label class="sw"><input type="checkbox" data-setting="skipInteraction"><span class="sl"></span></label>
+    </div>
+    <div class="sub-row">
+      <span>Filler</span>
+      <label class="sw"><input type="checkbox" data-setting="skipFiller"><span class="sl"></span></label>
+    </div>
+    <div class="sub-row">
+      <span>Preview / Recap</span>
+      <label class="sw"><input type="checkbox" data-setting="skipPreview"><span class="sl"></span></label>
+    </div>
+    <div class="sub-row">
+      <span>Non-music</span>
+      <label class="sw"><input type="checkbox" data-setting="skipMusicOfftopic"><span class="sl"></span></label>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Quality & Playback</div>
+
+  <div class="row">
+    <div class="ico ico-b"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-.75v1.5h-1.5V15H14c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v4zm-3.5-.5h2v-3h-2v3z"/></svg></div>
+    <div class="info"><h3>Max Quality</h3><p>Always highest resolution</p></div>
+    <label class="sw"><input type="checkbox" data-setting="autoMaxQuality"><span class="sl"></span></label>
+  </div>
+
+  <div class="row">
+    <div class="ico ico-b"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></div>
+    <div class="info"><h3>Picture-in-Picture</h3><p>Alt+P shortcut</p></div>
+    <label class="sw"><input type="checkbox" data-setting="pipEnabled"><span class="sl"></span></label>
+  </div>
+
+  <div class="row">
+    <div class="ico ico-b"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div>
+    <div class="info"><h3>Auto PiP on Tab Switch</h3><p>PiP when switching tabs</p></div>
+    <label class="sw"><input type="checkbox" data-setting="pipAutoSwitch"><span class="sl"></span></label>
+  </div>
+
+  <div class="row">
+    <div class="ico ico-b"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/></svg></div>
+    <div class="info"><h3>Background Play</h3><p>Audio continues in background</p></div>
+    <label class="sw"><input type="checkbox" data-setting="backgroundPlay"><span class="sl"></span></label>
+  </div>
+
+  <button class="more expand-btn" data-target="more-quality">
+    <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+    <span>More options</span>
+  </button>
+
+  <div class="fold" id="more-quality">
+    <div class="sub-row">
+      <span>Auto-dismiss Popups</span>
+      <label class="sw"><input type="checkbox" data-setting="autoDismissPopups"><span class="sl"></span></label>
+    </div>
+    <div class="sub-row">
+      <span>Hide Premium Ads</span>
+      <label class="sw"><input type="checkbox" data-setting="hidePremiumUpsells"><span class="sl"></span></label>
+    </div>
+    <div class="sub-row">
+      <span>Continuous Play</span>
+      <label class="sw"><input type="checkbox" data-setting="continuousPlay"><span class="sl"></span></label>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="foot">
+    <button id="openSettings">Settings</button>
+    <small>v1.0.0</small>
   </div>
 
   <script src="popup.js"></script>
