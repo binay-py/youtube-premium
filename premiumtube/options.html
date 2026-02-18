@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PremiumTube Settings</title>
+  <style>
+    :root {
+      --bg: #08080c;
+      --bg2: #0c0c12;
+      --surface: #121218;
+      --surface2: #1a1a22;
+      --surface3: #222230;
+      --border: #28283a;
+      --text: #eeeef2;
+      --text2: #a0a0b4;
+      --text3: #58586e;
+      --red: #ff2d55;
+      --red2: #cc2244;
+      --red-soft: rgba(255, 45, 85, 0.08);
+      --red-glow: rgba(255, 45, 85, 0.2);
+      --blue: #5ac8fa;
+      --blue-soft: rgba(90, 200, 250, 0.06);
+      --green: #30d158;
+      --green-soft: rgba(48, 209, 88, 0.06);
+      --purple: #bf5af2;
+      --purple-soft: rgba(191, 90, 242, 0.06);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== TOPBAR ===== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8, 8, 12, 0.8);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--red), var(--red2));
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 14px var(--red-glow);
+    }
+
+    .topbar-logo svg { width: 18px; height: 18px; fill: #fff; }
+
+    .topbar-text h1 {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+
+    .topbar-text p {
+      font-size: 11px;
+      color: var(--text3);
+      font-weight: 500;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .version-tag {
+      font-size: 10px;
+      color: var(--text3);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    /* ===== HERO STATS ===== */
+    .hero-stats {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 28px 32px 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .stat-card.s-red::before { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+    .stat-card.s-blue::before { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+    .stat-card.s-green::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1.1;
+    }
+
+    .stat-num.red { color: var(--red); }
+    .stat-num.blue { color: var(--blue); }
+    .stat-num.green { color: var(--green); }
+
+    .stat-desc {
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 4px;
+    }
+
+    /* ===== CONTAINER ===== */
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 32px 90px;
+    }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: #33334a; }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-head h2 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .tag {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 5px;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+    }
+
+    .tag-free { background: var(--green-soft); color: var(--green); }
+    .tag-pro { background: var(--red-soft); color: var(--red); }
+
+    /* ===== ROW ===== */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background 0.15s;
+    }
+
+    .row:last-child { border-bottom: none; }
+    .row:hover { background: rgba(255,255,255,0.015); }
+
+    .row-info { flex: 1; margin-right: 16px; }
+
+    .row-info h3 {
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+    }
+
+    .row-info p {
+      font-size: 11.5px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    /* ===== TOGGLE ===== */
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+
+    .track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface3);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+
+    .track::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 20px;
+      height: 20px;
+      background: var(--text3);
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    .toggle input:checked + .track {
+      background: var(--red);
+      box-shadow: 0 0 14px var(--red-glow);
+    }
+
+    .toggle input:checked + .track::after {
+      transform: translateX(18px);
+      background: #fff;
+    }
+
+    .toggle input:disabled + .track {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    /* ===== PREMIUM CTA ===== */
+    .premium-cta {
+      background: var(--surface);
+      border: 1px solid rgba(255, 45, 85, 0.15);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .premium-cta::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--red), var(--purple), var(--blue));
+    }
+
+    .premium-cta::after {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -15%;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(255,45,85,0.04) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .premium-body {
+      padding: 36px 32px;
+      text-align: center;
+      position: relative;
+    }
+
+    .premium-glyph {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--red), var(--red2));
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 30px var(--red-glow);
+    }
+
+    .premium-glyph svg { width: 32px; height: 32px; fill: #fff; }
+
+    .premium-body h3 {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.6px;
+      margin-bottom: 6px;
+    }
+
+    .premium-body > p {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .price-tag {
+      margin: 24px 0;
+    }
+
+    .price-amount {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .price-note {
+      font-size: 13px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .perks {
+      text-align: left;
+      max-width: 380px;
+      margin: 0 auto 28px;
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+    }
+
+    .perks li {
+      font-size: 12.5px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+    }
+
+    .perk-check {
+      width: 18px;
+      height: 18px;
+      background: var(--red-soft);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .perk-check svg { width: 11px; height: 11px; fill: var(--red); }
+
+    .btn-pay {
+      display: inline-block;
+      padding: 15px 48px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: linear-gradient(135deg, #0070ba, #005ea6);
+      color: #fff;
+      width: 100%;
+      max-width: 340px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(0, 112, 186, 0.25);
+      transition: filter 0.15s, transform 0.1s;
+      letter-spacing: -0.2px;
+    }
+
+    .btn-pay:hover { filter: brightness(1.15); }
+    .btn-pay:active { transform: scale(0.97); }
+
+    .btn-dev {
+      display: inline-block;
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text3);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    .btn-dev:hover { border-color: var(--text3); }
+
+    /* Unlocked */
+    .unlocked-banner {
+      background: linear-gradient(135deg, var(--surface) 0%, #0f1a12 100%);
+      border: 1px solid rgba(48, 209, 88, 0.2);
+      border-radius: 16px;
+      padding: 28px 32px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .unlocked-banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+    }
+
+    .unlocked-banner h3 {
+      color: var(--green);
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .unlocked-banner p {
+      color: var(--text3);
+      font-size: 13px;
+    }
+
+    /* ===== STATUSBAR ===== */
+    .statusbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(8, 8, 12, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status-msg {
+      font-size: 12px;
+      color: var(--green);
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .status-msg.show { opacity: 1; }
+
+    .status-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .status-links a {
+      font-size: 11px;
+      color: var(--text3);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .status-links a:hover { color: var(--text); }
+
+    .hidden { display: none !important; }
+
+    /* Load animation */
+    .card { opacity: 0; animation: cardIn 0.4s ease forwards; }
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.1s; }
+    .card:nth-child(3) { animation-delay: 0.15s; }
+    .card:nth-child(4) { animation-delay: 0.2s; }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <div class="topbar-logo">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div class="topbar-text">
+          <h1>PremiumTube</h1>
+          <p>Settings &amp; Configuration</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="version-tag">v1.0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="hero-stats">
+    <div class="stats-grid">
+      <div class="stat-card s-red">
+        <div class="stat-num red" id="statSegments">0</div>
+        <div class="stat-desc">Segments Skipped</div>
+      </div>
+      <div class="stat-card s-blue">
+        <div class="stat-num blue" id="statTime">0s</div>
+        <div class="stat-desc">Time Saved</div>
+      </div>
+      <div class="stat-card s-green">
+        <div class="stat-num green" id="statStatus">Active</div>
+        <div class="stat-desc">Extension Status</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Skip Segments -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Skip Segments</h2>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="row"><div class="row-info"><h3>Skip Intros</h3><p>Auto-skip video intro sequences</p></div><label class="toggle"><input type="checkbox" data-setting="skipIntro"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Outros</h3><p>Skip end screens and outro segments</p></div><label class="toggle"><input type="checkbox" data-setting="skipOutro"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Sponsors</h3><p>Skip sponsored segments (SponsorBlock)</p></div><label class="toggle"><input type="checkbox" data-setting="skipSponsor"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Skip Self-Promotion</h3><p>Merch mentions, channel promos</p></div><label class="toggle"><input type="checkbox" data-setting="skipSelfpromo"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Toast Notifications</h3><p>Show alert when a segment is skipped</p></div><label class="toggle"><input type="checkbox" data-setting="showToasts"><span class="track"></span></label></div>
+    </div>
+
+    <!-- Playback -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Playback</h2>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="row"><div class="row-info"><h3>Picture-in-Picture</h3><p>Toggle PiP with Alt+P keyboard shortcut</p></div><label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Auto PiP on Tab Switch</h3><p>Automatically enter PiP when leaving the tab</p></div><label class="toggle"><input type="checkbox" data-setting="pipAutoSwitch"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Background Play</h3><p>Keep audio playing when the tab is hidden</p></div><label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label></div>
+    </div>
+
+    <!-- Premium -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Premium Features</h2>
+        <span class="tag tag-pro">Premium</span>
+      </div>
+      <div class="row"><div class="row-info"><h3>Ad Skipping</h3><p>Automatically detect and skip video ads</p></div><label class="toggle"><input type="checkbox" data-setting="adSkip" data-premium="true"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Theater Mode Default</h3><p>Always open videos in theater mode</p></div><label class="toggle"><input type="checkbox" data-setting="theaterDefault" data-premium="true"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Remove Shorts</h3><p>Hide the Shorts shelf from homepage</p></div><label class="toggle"><input type="checkbox" data-setting="removeShorts" data-premium="true"><span class="track"></span></label></div>
+    </div>
+
+    <!-- Premium CTA -->
+    <div class="premium-cta" id="premiumLockSection">
+      <div class="premium-body">
+        <div class="premium-glyph">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        </div>
+        <h3>Unlock Premium</h3>
+        <p>One-time payment. No subscriptions. Yours forever.</p>
+        <div class="price-tag">
+          <div class="price-amount">$2.99</div>
+          <div class="price-note">one-time payment</div>
+        </div>
+        <ul class="perks">
+          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Auto-skip all ads</li>
+          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Theater mode default</li>
+          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Remove Shorts shelf</li>
+          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Priority support</li>
+        </ul>
+        <button class="btn-pay" id="paypalBtn">Pay with PayPal</button>
+        <br>
+        <button class="btn-dev" id="devUnlockBtn">Dev: Unlock Premium Locally</button>
+      </div>
+    </div>
+
+    <div class="unlocked-banner hidden" id="premiumUnlockedSection">
+      <h3>Premium Unlocked</h3>
+      <p>All premium features are active. Thank you for your support!</p>
+    </div>
+
+  </div>
+
+  <!-- Statusbar -->
+  <div class="statusbar">
+    <span class="status-msg" id="statusMsg">Settings saved</span>
+    <div class="status-links">
+      <a href="https://github.com/binay-py/youtube-premium" target="_blank">GitHub</a>
+      <a href="https://sponsor.ajay.app" target="_blank">SponsorBlock</a>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PremiumTube</title>
+  <style>
+    :root {
+      --bg: #0b0b0f;
+      --surface: #14141a;
+      --surface2: #1c1c24;
+      --surface3: #24242e;
+      --border: #2a2a35;
+      --text: #eeeef0;
+      --text2: #a0a0b0;
+      --text3: #606070;
+      --red: #ff2d55;
+      --red2: #e6264d;
+      --red-soft: rgba(255, 45, 85, 0.1);
+      --red-glow: rgba(255, 45, 85, 0.2);
+      --blue: #5ac8fa;
+      --blue-soft: rgba(90, 200, 250, 0.08);
+      --green: #30d158;
+      --green-soft: rgba(48, 209, 88, 0.08);
+      --purple: #bf5af2;
+      --purple-soft: rgba(191, 90, 242, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 360px;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ===== HERO HEADER ===== */
+    .hero {
+      position: relative;
+      padding: 20px 20px 16px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      left: -20%;
+      width: 140%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(255, 45, 85, 0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 60%, rgba(90, 200, 250, 0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .hero-brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--red) 0%, #cc1e44 100%);
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 12px var(--red-glow);
+    }
+
+    .logo svg { width: 18px; height: 18px; fill: #fff; }
+
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand p {
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 500;
+      margin-top: 1px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 5px 11px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Stats row */
+    .stats {
+      display: flex;
+      gap: 8px;
+      position: relative;
+    }
+
+    .stat {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .stat-value.red { color: var(--red); }
+    .stat-value.blue { color: var(--blue); }
+    .stat-value.green { color: var(--green); }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* ===== SECTIONS ===== */
+    .sections {
+      padding: 6px 12px;
+    }
+
+    .section {
+      margin-bottom: 6px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 8px 4px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text3);
+    }
+
+    .section-tag {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.6px;
+    }
+
+    .tag-free { background: var(--green-soft); color: var(--green); }
+    .tag-pro { background: var(--red-soft); color: var(--red); }
+
+    /* ===== FEATURE ROW ===== */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 8px;
+      border-radius: 10px;
+      transition: background 0.15s;
+      gap: 10px;
+    }
+
+    .row:hover { background: var(--surface); }
+
+    .row-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .row-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .row-icon svg { width: 16px; height: 16px; }
+
+    .ic-red { background: var(--red-soft); }
+    .ic-red svg { fill: var(--red); }
+    .ic-blue { background: var(--blue-soft); }
+    .ic-blue svg { fill: var(--blue); }
+    .ic-purple { background: var(--purple-soft); }
+    .ic-purple svg { fill: var(--purple); }
+
+    .row-text { min-width: 0; }
+
+    .row-text h3 {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-text p {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 1px;
+    }
+
+    .pro-chip {
+      font-size: 7px;
+      font-weight: 800;
+      color: var(--red);
+      background: var(--red-soft);
+      padding: 1.5px 5px;
+      border-radius: 3px;
+      margin-left: 5px;
+      vertical-align: middle;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== TOGGLE ===== */
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+
+    .track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface3);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+
+    .track::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 18px;
+      height: 18px;
+      background: var(--text3);
+      border-radius: 50%;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .toggle input:checked + .track {
+      background: var(--red);
+      box-shadow: 0 0 10px var(--red-glow);
+    }
+
+    .toggle input:checked + .track::after {
+      transform: translateX(16px);
+      background: #fff;
+    }
+
+    .toggle input:disabled + .track {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    /* ===== DIVIDER ===== */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 4px 20px;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      padding: 8px 14px 14px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 11px;
+      border: none;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: filter 0.15s, transform 0.1s;
+      text-align: center;
+      letter-spacing: -0.1px;
+    }
+
+    .btn:hover { filter: brightness(1.15); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-settings {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-premium {
+      background: linear-gradient(135deg, var(--red) 0%, var(--red2) 100%);
+      color: #fff;
+      box-shadow: 0 3px 14px var(--red-glow);
+    }
+
+    .btn-premium.unlocked {
+      background: linear-gradient(135deg, var(--green) 0%, #28b54c 100%);
+      box-shadow: 0 3px 14px rgba(48, 209, 88, 0.2);
+    }
+
+    /* ===== LOAD ANIMATION ===== */
+    .row { opacity: 0; animation: fadeSlide 0.3s ease forwards; }
+    .row:nth-child(1) { animation-delay: 0.02s; }
+    .row:nth-child(2) { animation-delay: 0.04s; }
+    .row:nth-child(3) { animation-delay: 0.06s; }
+    .row:nth-child(4) { animation-delay: 0.08s; }
+    .row:nth-child(5) { animation-delay: 0.10s; }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero Header -->
+  <div class="hero">
+    <div class="hero-top">
+      <div class="hero-brand">
+        <div class="logo">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div class="brand">
+          <h1>PremiumTube</h1>
+          <p>YouTube Premium Alternative</p>
+        </div>
+      </div>
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="featureCount">0 on</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value red" id="segmentsSkipped">0</div>
+        <div class="stat-label">Skipped</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value blue" id="timeSaved">0s</div>
+        <div class="stat-label">Time saved</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value green" id="sessionActive">Active</div>
+        <div class="stat-label">Status</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature Sections -->
+  <div class="sections">
+
+    <!-- Skip -->
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Skip Segments</span>
+        <span class="section-tag tag-free">Free</span>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div>
+          <div class="row-text"><h3>Skip Intros</h3><p>Video intro sequences</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="skipIntro"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div>
+          <div class="row-text"><h3>Skip Outros</h3><p>End screens &amp; credits</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="skipOutro"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+          <div class="row-text"><h3>Skip Sponsors</h3><p>SponsorBlock powered</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="skipSponsor"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zm-5-7l3-2.5V7h-2v1.6L12 11 9 8.6V7H7v2.5L10 12l-3 2.5V17h2v-1.6l3-2.4 3 2.4V17h2v-2.5L13 12z"/></svg></div>
+          <div class="row-text"><h3>Skip Self-promo</h3><p>Merch plugs &amp; promos</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="skipSelfpromo"><span class="track"></span></label>
+      </div>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Playback -->
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Playback</span>
+        <span class="section-tag tag-free">Free</span>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 7h-8v6H5v-4H3v10h2v-4h14v4h2V3h-2v4zm-2 8H7v-2h10v2z"/></svg></div>
+          <div class="row-text"><h3>Picture-in-Picture</h3><p>Alt+P shortcut</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg></div>
+          <div class="row-text"><h3>Background Play</h3><p>Audio continues in background</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div>
+          <div class="row-text"><h3>Toast Alerts</h3><p>Show skip notifications</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="showToasts"><span class="track"></span></label>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Premium -->
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Premium</span>
+        <span class="section-tag tag-pro">Pro</span>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+          <div class="row-text"><h3>Ad Skipping <span class="pro-chip">PRO</span></h3><p>Auto-skip video ads</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="adSkip" data-premium="true"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/></svg></div>
+          <div class="row-text"><h3>Theater Default <span class="pro-chip">PRO</span></h3><p>Always theater mode</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="theaterDefault" data-premium="true"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div class="row-left">
+          <div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M18 3.48V2H6v1.48C4.2 4.92 3 7.27 3 9.5 3 11.71 4.22 13.62 6 14.96V22h12v-7.04c1.78-1.34 3-3.25 3-5.46 0-2.23-1.2-4.58-3-6.02zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div>
+          <div class="row-text"><h3>Hide Shorts <span class="pro-chip">PRO</span></h3><p>Remove Shorts shelf</p></div>
+        </div>
+        <label class="toggle"><input type="checkbox" data-setting="removeShorts" data-premium="true"><span class="track"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <button class="btn btn-settings" id="openSettings">Settings</button>
+    <button class="btn btn-premium" id="premiumBtn">Unlock Premium</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
