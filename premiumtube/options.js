@@ -3,10 +3,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const toggles = document.querySelectorAll('input[data-setting]');
   const statusMsg = document.getElementById('statusMsg');
-  const premiumLockSection = document.getElementById('premiumLockSection');
-  const premiumUnlockedSection = document.getElementById('premiumUnlockedSection');
-  const paypalBtn = document.getElementById('paypalBtn');
-  const devUnlockBtn = document.getElementById('devUnlockBtn');
   const statSegments = document.getElementById('statSegments');
   const statTime = document.getElementById('statTime');
 
@@ -27,25 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function applySettings() {
     toggles.forEach(toggle => {
       const key = toggle.dataset.setting;
-      const isPremium = toggle.dataset.premium === 'true';
-
       toggle.checked = !!settings[key];
-
-      if (isPremium && !settings.isPremium) {
-        toggle.disabled = true;
-        toggle.checked = false;
-      } else {
-        toggle.disabled = false;
-      }
     });
-
-    if (settings.isPremium) {
-      premiumLockSection.classList.add('hidden');
-      premiumUnlockedSection.classList.remove('hidden');
-    } else {
-      premiumLockSection.classList.remove('hidden');
-      premiumUnlockedSection.classList.add('hidden');
-    }
   }
 
   applySettings();
@@ -53,29 +32,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   toggles.forEach(toggle => {
     toggle.addEventListener('change', async () => {
       const key = toggle.dataset.setting;
-      const isPremium = toggle.dataset.premium === 'true';
-
-      if (isPremium && !settings.isPremium) {
-        toggle.checked = false;
-        showStatus('Unlock Premium to enable this feature');
-        return;
-      }
-
       settings[key] = toggle.checked;
       await chrome.storage.sync.set({ [key]: toggle.checked });
       showStatus('Settings saved');
     });
-  });
-
-  paypalBtn.addEventListener('click', () => {
-    showStatus('PayPal integration coming soon - use Dev Unlock for testing');
-  });
-
-  devUnlockBtn.addEventListener('click', async () => {
-    settings.isPremium = true;
-    await chrome.storage.sync.set({ isPremium: true });
-    applySettings();
-    showStatus('Premium unlocked!');
   });
 
   function showStatus(msg) {

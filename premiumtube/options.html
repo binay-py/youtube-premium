@@ -203,7 +203,6 @@
     }
 
     .tag-free { background: var(--green-soft); color: var(--green); }
-    .tag-pro { background: var(--red-soft); color: var(--red); }
 
     /* ===== ROW ===== */
     .row {
@@ -279,191 +278,6 @@
       cursor: not-allowed;
     }
 
-    /* ===== PREMIUM CTA ===== */
-    .premium-cta {
-      background: var(--surface);
-      border: 1px solid rgba(255, 45, 85, 0.15);
-      border-radius: 16px;
-      margin-bottom: 16px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .premium-cta::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--red), var(--purple), var(--blue));
-    }
-
-    .premium-cta::after {
-      content: '';
-      position: absolute;
-      top: -40%;
-      right: -15%;
-      width: 350px;
-      height: 350px;
-      background: radial-gradient(circle, rgba(255,45,85,0.04) 0%, transparent 65%);
-      pointer-events: none;
-    }
-
-    .premium-body {
-      padding: 36px 32px;
-      text-align: center;
-      position: relative;
-    }
-
-    .premium-glyph {
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, var(--red), var(--red2));
-      border-radius: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-      box-shadow: 0 6px 30px var(--red-glow);
-    }
-
-    .premium-glyph svg { width: 32px; height: 32px; fill: #fff; }
-
-    .premium-body h3 {
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: -0.6px;
-      margin-bottom: 6px;
-    }
-
-    .premium-body > p {
-      font-size: 13px;
-      color: var(--text2);
-    }
-
-    .price-tag {
-      margin: 24px 0;
-    }
-
-    .price-amount {
-      font-size: 48px;
-      font-weight: 900;
-      color: var(--red);
-      letter-spacing: -2px;
-      line-height: 1;
-    }
-
-    .price-note {
-      font-size: 13px;
-      color: var(--text3);
-      margin-top: 4px;
-    }
-
-    .perks {
-      text-align: left;
-      max-width: 380px;
-      margin: 0 auto 28px;
-      list-style: none;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 16px;
-    }
-
-    .perks li {
-      font-size: 12.5px;
-      color: var(--text2);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 5px 0;
-    }
-
-    .perk-check {
-      width: 18px;
-      height: 18px;
-      background: var(--red-soft);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .perk-check svg { width: 11px; height: 11px; fill: var(--red); }
-
-    .btn-pay {
-      display: inline-block;
-      padding: 15px 48px;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      background: linear-gradient(135deg, #0070ba, #005ea6);
-      color: #fff;
-      width: 100%;
-      max-width: 340px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 20px rgba(0, 112, 186, 0.25);
-      transition: filter 0.15s, transform 0.1s;
-      letter-spacing: -0.2px;
-    }
-
-    .btn-pay:hover { filter: brightness(1.15); }
-    .btn-pay:active { transform: scale(0.97); }
-
-    .btn-dev {
-      display: inline-block;
-      padding: 10px 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface2);
-      color: var(--text3);
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: border-color 0.15s;
-    }
-
-    .btn-dev:hover { border-color: var(--text3); }
-
-    /* Unlocked */
-    .unlocked-banner {
-      background: linear-gradient(135deg, var(--surface) 0%, #0f1a12 100%);
-      border: 1px solid rgba(48, 209, 88, 0.2);
-      border-radius: 16px;
-      padding: 28px 32px;
-      text-align: center;
-      margin-bottom: 16px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .unlocked-banner::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--green), transparent);
-    }
-
-    .unlocked-banner h3 {
-      color: var(--green);
-      font-size: 18px;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .unlocked-banner p {
-      color: var(--text3);
-      font-size: 13px;
-    }
-
     /* ===== STATUSBAR ===== */
     .statusbar {
       position: fixed;
@@ -504,8 +318,6 @@
     }
 
     .status-links a:hover { color: var(--text); }
-
-    .hidden { display: none !important; }
 
     /* Load animation */
     .card { opacity: 0; animation: cardIn 0.4s ease forwards; }
@@ -588,57 +400,9 @@
       <div class="row"><div class="row-info"><h3>Picture-in-Picture</h3><p>Toggle PiP with Alt+P keyboard shortcut</p></div><label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Auto PiP on Tab Switch</h3><p>Automatically enter PiP when leaving the tab</p></div><label class="toggle"><input type="checkbox" data-setting="pipAutoSwitch"><span class="track"></span></label></div>
       <div class="row"><div class="row-info"><h3>Background Play</h3><p>Keep audio playing when the tab is hidden</p></div><label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label></div>
-      <div class="row"><div class="row-info"><h3>Toast Notifications</h3><p>Show alert when a segment is skipped</p></div><label class="toggle"><input type="checkbox" data-setting="showToasts"><span class="track"></span></label></div>
-    </div>
-
-    <!-- Video Enhancement -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Video Enhancement</h2>
-        <span class="tag tag-free">Free</span>
-      </div>
-      <div class="row"><div class="row-info"><h3>Prefer AV1 Codec</h3><p>Better quality at the same bitrate</p></div><label class="toggle"><input type="checkbox" data-setting="preferAV1"><span class="track"></span></label></div>
-      <div class="row"><div class="row-info"><h3>Disable Ambient Mode</h3><p>Remove glow &amp; HDR dimming effect</p></div><label class="toggle"><input type="checkbox" data-setting="disableAmbient"><span class="track"></span></label></div>
-      <div class="row"><div class="row-info"><h3>Video Sharpening</h3><p>Subtle clarity boost via CSS filter</p></div><label class="toggle"><input type="checkbox" data-setting="videoSharpening"><span class="track"></span></label></div>
-    </div>
-
-    <!-- Premium -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Premium Features</h2>
-        <span class="tag tag-pro">Premium</span>
-      </div>
-      <div class="row"><div class="row-info"><h3>Theater Mode Default</h3><p>Always open videos in theater mode</p></div><label class="toggle"><input type="checkbox" data-setting="theaterDefault" data-premium="true"><span class="track"></span></label></div>
-      <div class="row"><div class="row-info"><h3>Remove Shorts</h3><p>Hide the Shorts shelf from homepage</p></div><label class="toggle"><input type="checkbox" data-setting="removeShorts" data-premium="true"><span class="track"></span></label></div>
-    </div>
-
-    <!-- Premium CTA -->
-    <div class="premium-cta" id="premiumLockSection">
-      <div class="premium-body">
-        <div class="premium-glyph">
-          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-        </div>
-        <h3>Unlock Premium</h3>
-        <p>One-time payment. No subscriptions. Yours forever.</p>
-        <div class="price-tag">
-          <div class="price-amount">$2.99</div>
-          <div class="price-note">one-time payment</div>
-        </div>
-        <ul class="perks">
-          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Auto-skip all ads</li>
-          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Theater mode default</li>
-          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Remove Shorts shelf</li>
-          <li><span class="perk-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>Priority support</li>
-        </ul>
-        <button class="btn-pay" id="paypalBtn">Pay with PayPal</button>
-        <br>
-        <button class="btn-dev" id="devUnlockBtn">Dev: Unlock Premium Locally</button>
-      </div>
-    </div>
-
-    <div class="unlocked-banner hidden" id="premiumUnlockedSection">
-      <h3>Premium Unlocked</h3>
-      <p>All premium features are active. Thank you for your support!</p>
+      <div class="row"><div class="row-info"><h3>Auto-dismiss Popups</h3><p>Dismiss "Are you still watching?" prompts automatically</p></div><label class="toggle"><input type="checkbox" data-setting="autoDismissPopups"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Hide Premium Upsells</h3><p>Hide "Get YouTube Premium" banners and promos</p></div><label class="toggle"><input type="checkbox" data-setting="hidePremiumUpsells"><span class="track"></span></label></div>
+      <div class="row"><div class="row-info"><h3>Continuous Play</h3><p>Prevent YouTube from pausing during long sessions</p></div><label class="toggle"><input type="checkbox" data-setting="continuousPlay"><span class="track"></span></label></div>
     </div>
 
   </div>

@@ -195,7 +195,6 @@
     }
 
     .tag-free { background: var(--green-soft); color: var(--green); }
-    .tag-pro { background: var(--red-soft); color: var(--red); }
 
     /* ===== FEATURE ROW ===== */
     .row {
@@ -254,18 +253,6 @@
       font-size: 10px;
       color: var(--text3);
       margin-top: 1px;
-    }
-
-    .pro-chip {
-      font-size: 7px;
-      font-weight: 800;
-      color: var(--red);
-      background: var(--red-soft);
-      padding: 1.5px 5px;
-      border-radius: 3px;
-      margin-left: 5px;
-      vertical-align: middle;
-      letter-spacing: 0.5px;
     }
 
     /* ===== COMPACT ROW (for collapsible sections) ===== */
@@ -370,7 +357,7 @@
     }
 
     .collapsible.open {
-      max-height: 300px;
+      max-height: 500px;
     }
 
     /* ===== DIVIDER ===== */
@@ -408,17 +395,6 @@
       background: var(--surface2);
       color: var(--text);
       border: 1px solid var(--border);
-    }
-
-    .btn-premium {
-      background: linear-gradient(135deg, var(--red) 0%, var(--red2) 100%);
-      color: #fff;
-      box-shadow: 0 3px 14px var(--red-glow);
-    }
-
-    .btn-premium.unlocked {
-      background: linear-gradient(135deg, var(--green) 0%, #28b54c 100%);
-      box-shadow: 0 3px 14px rgba(48, 209, 88, 0.2);
     }
 
     /* ===== LOAD ANIMATION ===== */
@@ -560,14 +536,6 @@
 
       <div class="row">
         <div class="row-left">
-          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg></div>
-          <div class="row-text"><h3>AV1 Codec</h3><p>Better quality, same bitrate</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="preferAV1"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
           <div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 7h-8v6H5v-4H3v10h2v-4h14v4h2V3h-2v4zm-2 8H7v-2h10v2z"/></svg></div>
           <div class="row-text"><h3>Picture-in-Picture</h3><p>Alt+P shortcut</p></div>
         </div>
@@ -589,51 +557,25 @@
 
       <div class="collapsible" id="more-quality">
         <div class="compact-row">
-          <h3>Video Sharpening</h3>
-          <label class="toggle"><input type="checkbox" data-setting="videoSharpening"><span class="track"></span></label>
+          <h3>Auto-dismiss Popups</h3>
+          <label class="toggle"><input type="checkbox" data-setting="autoDismissPopups"><span class="track"></span></label>
         </div>
         <div class="compact-row">
-          <h3>Disable Ambient</h3>
-          <label class="toggle"><input type="checkbox" data-setting="disableAmbient"><span class="track"></span></label>
+          <h3>Hide Premium Ads</h3>
+          <label class="toggle"><input type="checkbox" data-setting="hidePremiumUpsells"><span class="track"></span></label>
         </div>
         <div class="compact-row">
-          <h3>Toast Alerts</h3>
-          <label class="toggle"><input type="checkbox" data-setting="showToasts"><span class="track"></span></label>
+          <h3>Continuous Play</h3>
+          <label class="toggle"><input type="checkbox" data-setting="continuousPlay"><span class="track"></span></label>
         </div>
       </div>
     </div>
 
-    <div class="divider"></div>
-
-    <!-- Premium -->
-    <div class="section">
-      <div class="section-head">
-        <span class="section-title">Premium</span>
-        <span class="section-tag tag-pro">Pro</span>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/></svg></div>
-          <div class="row-text"><h3>Theater Default <span class="pro-chip">PRO</span></h3><p>Always theater mode</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="theaterDefault" data-premium="true"><span class="track"></span></label>
-      </div>
-
-      <div class="row">
-        <div class="row-left">
-          <div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M18 3.48V2H6v1.48C4.2 4.92 3 7.27 3 9.5 3 11.71 4.22 13.62 6 14.96V22h12v-7.04c1.78-1.34 3-3.25 3-5.46 0-2.23-1.2-4.58-3-6.02zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div>
-          <div class="row-text"><h3>Hide Shorts <span class="pro-chip">PRO</span></h3><p>Remove Shorts shelf</p></div>
-        </div>
-        <label class="toggle"><input type="checkbox" data-setting="removeShorts" data-premium="true"><span class="track"></span></label>
-      </div>
-    </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
     <button class="btn btn-settings" id="openSettings">Settings</button>
-    <button class="btn btn-premium" id="premiumBtn">Unlock Premium</button>
   </div>
 
   <script src="popup.js"></script>

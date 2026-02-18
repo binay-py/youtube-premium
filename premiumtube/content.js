@@ -17,6 +17,11 @@
   let posTimer = null;
   let keyHandler = null;
 
+  // Upcoming segment preview state
+  let upcomingBtn = null;
+  let upcomingSeg = null;
+  let upcomingPosTimer = null;
+
   // Local detection state
   let localDetectionTimers = [];
   let endScreenDetected = false;
@@ -40,29 +45,78 @@
   const SEGMENT_KEYWORDS = {
     intro: [
       'intro', 'introduction', 'opening segment',
-      'quick intro', 'opening'
+      'quick intro', 'opening', 'welcome segment'
     ],
     outro: [
       'outro', 'ending', 'credits', 'closing',
       'wrap up', 'wrap-up', 'end screen', 'endscreen',
-      'final thoughts', 'end card'
+      'final thoughts', 'end card', 'goodbye', 'bye bye'
     ],
     sponsor: [
       'sponsor', 'sponsored', 'advertisement', 'paid promotion',
-      "today's sponsor", 'ad break', 'ad read'
+      "today's sponsor", 'ad break', 'ad read',
+      'collaboration', 'collab', 'in association with', 'partnered with',
+      'gifted', 'pr package', 'pr unboxing', 'sent me',
+      '#ad', '#sponsored', '#collab', '#partnership',
+      'brand deal', 'paid partnership', 'promoted', 'integrated ad'
     ],
     selfpromo: [
       'merch', 'merchandise', 'self promo', 'self-promo', 'selfpromo',
-      'channel plug', 'shameless plug'
+      'channel plug', 'shameless plug', 'my course', 'my podcast'
     ],
     interaction: [
       'subscribe', 'like button', 'notification bell', 'leave a comment',
-      'hit the bell', 'smash the like'
+      'hit the bell', 'smash the like', 'like and subscribe',
+      'comment below'
     ],
     preview: [
-      'preview', 'recap', 'previously on', 'last time', 'quick recap'
+      'preview', 'recap', 'previously on', 'last time', 'quick recap',
+      'coming up'
     ]
   };
+
+  // Known sponsor brands — used by matchCategory() pattern matching and caption scanning
+  const SPONSOR_BRANDS = [
+    // Indian brands
+    'flipkart', 'myntra', 'meesho', 'ajio', 'nykaa', 'mamaearth', 'wow skin science',
+    'boat', 'noise', 'fire-boltt', 'realme', 'oneplus', 'samsung india',
+    'cred', 'groww', 'zerodha', 'upstox', 'coin dcx', 'coinswitch',
+    'unacademy', 'byju', "byjus", 'physicswallah', 'vedantu', 'toppr',
+    'lenskart', 'sugar cosmetics', 'plum goodness', 'mivi', 'portronics',
+    'swiggy', 'zomato', 'blinkit', 'zepto', 'dunzo',
+    'phonepe', 'paytm', 'google pay', 'amazon pay',
+    'cult.fit', 'healthifyme', 'beardo', 'man matters',
+    'urban company', 'pharmeasy', 'netmeds', '1mg',
+    'wrogn', 'bewakoof', 'souled store', 'the man company',
+    'pepperfry', 'urban ladder', 'wakefit',
+    'khatabook', 'open', 'razorpay',
+    'shaadi.com', 'matrimony.com',
+    'jiocinema', 'hotstar', 'zee5', 'sonyliv', 'voot',
+    'dream11', 'mpl', 'winzo', 'my11circle',
+    // Global / Western brands
+    'nordvpn', 'surfshark', 'expressvpn', 'private internet access',
+    'squarespace', 'skillshare', 'audible', 'brilliant', 'curiositystream',
+    'nebula', 'wondrium', 'coursera',
+    'raid shadow legends', 'genshin impact', 'rise of kingdoms',
+    'manscaped', 'dollar shave club', 'dr squatch',
+    'betterhelp', 'headspace', 'calm',
+    'hellofresh', 'hello fresh', 'factor meals', 'athletic greens',
+    'magic spoon', 'ag1',
+    'ridge wallet', 'raycon', 'casetify', 'dbrand',
+    'established titles', 'incogni', 'dashlane', 'lastpass', '1password',
+    'opera gx', 'brave browser',
+    'bespoke post', 'sheath underwear',
+    'hostinger', 'bluehost', 'namecheap',
+    'shopify', 'wix', 'notion',
+    'grammarly', 'canva',
+    'ground news', 'morning brew', 'the daily wire',
+    'funcky', 'backbone one', 'analogue',
+    'keeps', 'hims', 'roman',
+    'honey', 'rakuten', 'capital one shopping',
+    'trade coffee', 'masterclass',
+    'seatgeek', 'stubhub',
+    'stamps.com', 'shipstation',
+  ];
 
   // Stricter keywords for caption/transcript scanning — only multi-word phrases
   // that are unambiguous signals (won't match in normal speech)
@@ -72,7 +126,16 @@
       'hello and welcome', 'in this video we', "in today's video",
       "let's get into it", "let's dive in", "let's jump into",
       'before we get started', 'before we begin', 'thanks for tuning in',
-      'thanks for clicking'
+      'thanks for clicking',
+      // More English
+      "what's up guys", "what's going on guys", 'hey everyone welcome',
+      'hey guys welcome', 'hi guys welcome', 'hello friends',
+      'good morning everyone', "what's up everyone",
+      // Hindi/Hinglish
+      'namaste doston', 'namaskar doston', 'namaskar dosto',
+      'toh chaliye shuru karte', 'chaliye shuru karte hain',
+      'swagat hai aapka', 'aaj hum baat karenge',
+      'toh aaj ki video mein', 'hello doston', 'hello dosto'
     ],
     outro: [
       'thanks for watching', 'thank you for watching', 'see you next time',
@@ -83,7 +146,14 @@
       'smash that subscribe', 'hit the subscribe', 'ring the bell',
       'leave a like', 'drop a like', 'comment down below',
       "that's a wrap", "that's gonna do it", "that's going to do it",
-      'signing off', 'have a great day'
+      'signing off', 'have a great day',
+      // More English
+      'bye bye guys', 'take care guys', 'take care everyone',
+      'see you guys in the next', 'peace out everyone',
+      // Hindi/Hinglish
+      'milte hain next video', 'aur milte hain', 'milte hain agle video mein',
+      'toh milte hain', 'alvida doston', 'bye bye doston',
+      'apna khayal rakhna', 'video ko like karna mat bhoolna'
     ],
     sponsor: [
       'this video is sponsored', 'this video is brought to you',
@@ -92,13 +162,14 @@
       'promo code', 'special offer', 'link in the description',
       'first 100 people', 'first 1000 people', 'first 500 people',
       'sign up for free', 'free trial',
-      // Known sponsor brands (unambiguous)
-      'nordvpn', 'squarespace', 'skillshare', 'audible', 'raid shadow legends',
-      'surfshark', 'expressvpn', 'manscaped', 'dashlane',
-      'curiositystream', 'dollar shave club', 'betterhelp', 'hellofresh',
-      'hello fresh', 'ridge wallet', 'raycon', 'established titles',
-      'private internet access', 'incogni', 'athletic greens',
-      'magic spoon', 'bespoke post', 'casetify', 'opera gx'
+      // Partnership/collaboration phrases
+      'in collaboration with', 'in association with', 'special thanks to',
+      'shoutout to', 'partnered with', 'paid partnership with',
+      // More CTAs
+      'click the link', 'limited time offer', 'percent off', 'check them out',
+      'use the link below', 'huge discount', 'exclusive deal',
+      // Auto-include all sponsor brands
+      ...SPONSOR_BRANDS
     ],
     selfpromo: [
       'check out my', 'my other channel', 'second channel',
@@ -106,14 +177,17 @@
       'channel membership', 'support the channel', 'link in bio',
       'check out my merch', 'my merch store', 'buy me a coffee',
       'follow me on', 'sign up for my', 'my online course',
-      'listen to my podcast'
+      'listen to my podcast',
+      'my website', 'my store', 'my app'
     ],
     interaction: [
       'smash that like', 'hit the like', 'drop a like', 'leave a like',
       'smash that subscribe', 'hit the subscribe', 'click subscribe',
       'hit the notification', 'ring the notification', 'turn on notifications',
       'comment down below', 'leave a comment below', 'let me know in the comments',
-      'share this video', 'share with your friends'
+      'share this video', 'share with your friends',
+      'like share subscribe', 'like subscribe', 'subscribe karo',
+      'like karo', 'bell icon daba do'
     ]
   };
 
@@ -128,7 +202,9 @@
     setupPiP();
     setupAdBlocker();
     setupAutoQuality();
-    setupVideoEnhancement();
+    setupAutoDismiss();
+    setupHidePremiumUpsells();
+    setupContinuousPlay();
     attach();
     log('Ready!', '#30d158');
   }
@@ -144,9 +220,9 @@
       skipIntro: true, skipOutro: true, skipSponsor: true,
       skipSelfpromo: true, skipInteraction: true, skipMusicOfftopic: true,
       skipPreview: true, skipFiller: true, adSkip: true,
-      pipEnabled: true, pipAutoSwitch: false,
-      backgroundPlay: true, showToasts: true, autoMaxQuality: true, isPremium: false,
-      preferAV1: true, disableAmbient: true, videoSharpening: true
+      pipEnabled: true, pipAutoSwitch: true,
+      backgroundPlay: true, autoMaxQuality: true,
+      autoDismissPopups: true, hidePremiumUpsells: true, continuousPlay: true
     };
   }
 
@@ -157,11 +233,11 @@
 
       // React to feature toggles that need setup/teardown
       if (k === 'adSkip' && newValue && !oldVal) setupAdBlocker();
-      if (k === 'disableAmbient' && newValue) disableAmbientMode();
-      if (k === 'disableAmbient' && !newValue) removeAmbientDisable();
-      if (k === 'videoSharpening' && newValue) applySharpening();
-      if (k === 'videoSharpening' && !newValue) removeSharpening();
       if (k === 'autoMaxQuality' && newValue) applyMaxQuality();
+      if (k === 'autoDismissPopups' && newValue) setupAutoDismiss();
+      if (k === 'hidePremiumUpsells' && newValue) setupHidePremiumUpsells();
+      if (k === 'hidePremiumUpsells' && !newValue) removeHidePremiumUpsells();
+      if (k === 'continuousPlay' && newValue) setupContinuousPlay();
     }
   });
 
@@ -204,6 +280,7 @@
     if (id === currentVideoId) return;
     stop();
     removeBtn();
+    removeUpcoming();
     removeSeekbarMarkers();
     cleanupLocalDetection();
     currentVideoId = id;
@@ -211,19 +288,19 @@
 
     log(`Video: ${id}`, '#5ac8fa');
 
-    // Fetch directly from SponsorBlock (CORS allowed)
-    await fetchDirect(id);
+    // Start polling immediately so segments found by any method are caught
+    startPoll();
 
-    // Run local detection methods (SponsorBlock has priority)
+    // Start local detection immediately (don't wait for API)
     detectFromChapters();
     detectFromDescription();
-    detectFromCaptions();       // Method 4: caption transcript scanning
-    detectHeuristicFallback();  // Method 5: last-resort heuristic (only if 0 segments after 8s)
+    detectFromCaptions();
     // End screen detection runs during check() polling
 
-    startPoll();
+    // Fetch from SponsorBlock (with retry) — runs in parallel with local detection
+    await fetchDirect(id);
+
     if (skipSegments.length) addSeekbarMarkers();
-    applyPremium();
     applyMaxQuality();
   }
 
@@ -537,11 +614,12 @@
     const maxAttempts = 30; // 15s at 500ms intervals
 
     const tryDetect = () => {
-      // Try DOM selectors (expanded)
+      // Try DOM selectors (expanded for current YouTube layout)
       const chapterElements = document.querySelectorAll(
         'ytd-macro-markers-list-item-renderer, ' +
         'ytd-chapter-renderer, ' +
-        'ytd-engagement-panel-section-list-renderer[target-id*="chapters"] ytd-macro-markers-list-item-renderer'
+        'ytd-engagement-panel-section-list-renderer[target-id*="chapters"] ytd-macro-markers-list-item-renderer, ' +
+        'ytd-engagement-panel-section-list-renderer[target-id*="macro-markers"] ytd-macro-markers-list-item-renderer'
       );
 
       // Also try parsing from ytInitialData JSON
@@ -638,12 +716,14 @@
         'ytd-text-inline-expander #snippet-text, ' +
         'ytd-text-inline-expander .content, ' +
         '#description-inline-expander #plain-snippet-text, ' +
+        '#description-inline-expander yt-attributed-string, ' +
         'ytd-expander #content, ' +
         '#meta-contents ytd-expander, ' +
         '#description .content, ' +
         '#attributed-snippet-text, ' +
         'ytd-watch-metadata #description, ' +
-        'yt-attributed-string'
+        'ytd-watch-metadata yt-attributed-string, ' +
+        'yt-attributed-string.content'
       );
 
       if (!descEl) {
@@ -816,7 +896,7 @@
     const tryDetect = async () => {
       const v = getVid();
       if (!v || !v.duration) {
-        if (++captionRetries < 3) {
+        if (++captionRetries < 6) {
           const timerId = setTimeout(() => detectFromCaptions(), 3000);
           localDetectionTimers.push(timerId);
         }
@@ -824,27 +904,54 @@
       }
 
       try {
-        // Extract caption track URL from ytInitialPlayerResponse in page source
         let captionUrl = null;
-        const scripts = document.querySelectorAll('script');
-        for (const script of scripts) {
-          const text = script.textContent;
-          if (!text.includes('ytInitialPlayerResponse')) continue;
-          const match = text.match(/ytInitialPlayerResponse\s*=\s*({.+?});/s);
-          if (!match) continue;
-          const playerData = JSON.parse(match[1]);
-          const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-          if (!tracks || !tracks.length) break;
 
-          // Prefer English, fall back to first available
-          const enTrack = tracks.find(t =>
-            t.languageCode === 'en' || t.languageCode?.startsWith('en')
-          ) || tracks[0];
+        // Method A: Try YouTube's internal player API (most reliable)
+        const player = document.querySelector('#movie_player');
+        if (player && typeof player.getOption === 'function') {
+          try {
+            const trackList = player.getOption('captions', 'tracklist');
+            if (trackList && trackList.length) {
+              const enTrack = trackList.find(t =>
+                t.languageCode === 'en' || t.languageCode?.startsWith('en')
+              ) || trackList[0];
+              if (enTrack?.baseUrl) captionUrl = enTrack.baseUrl;
+            }
+          } catch (e) { /* player API not available yet */ }
+        }
 
-          if (enTrack?.baseUrl) {
-            captionUrl = enTrack.baseUrl;
+        // Method B: Parse from ytInitialPlayerResponse in page source
+        if (!captionUrl) {
+          const scripts = document.querySelectorAll('script');
+          for (const script of scripts) {
+            const text = script.textContent;
+            if (!text.includes('ytInitialPlayerResponse')) continue;
+            const match = text.match(/ytInitialPlayerResponse\s*=\s*({.+?});/s);
+            if (!match) continue;
+            const playerData = JSON.parse(match[1]);
+            const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+            if (!tracks || !tracks.length) break;
+
+            const enTrack = tracks.find(t =>
+              t.languageCode === 'en' || t.languageCode?.startsWith('en')
+            ) || tracks[0];
+
+            if (enTrack?.baseUrl) captionUrl = enTrack.baseUrl;
+            break;
           }
-          break;
+        }
+
+        // Method C: Try the global ytInitialPlayerResponse object
+        if (!captionUrl && window.ytInitialPlayerResponse) {
+          try {
+            const tracks = window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+            if (tracks && tracks.length) {
+              const enTrack = tracks.find(t =>
+                t.languageCode === 'en' || t.languageCode?.startsWith('en')
+              ) || tracks[0];
+              if (enTrack?.baseUrl) captionUrl = enTrack.baseUrl;
+            }
+          } catch (e) { /* not available */ }
         }
 
         if (!captionUrl) {
@@ -884,9 +991,14 @@
 
         // Scan captions using CAPTION_KEYWORDS (strict, multi-word only)
         const rawHits = []; // { start, end, category }
+        const videoDuration = v.duration;
 
         for (const cap of captions) {
           for (const [category, keywords] of Object.entries(CAPTION_KEYWORDS)) {
+            // Temporal filtering: intro only in first 15%, outro only in last 15%
+            if (category === 'intro' && videoDuration > 0 && cap.start > videoDuration * 0.15) continue;
+            if (category === 'outro' && videoDuration > 0 && cap.start < videoDuration * 0.85) continue;
+
             for (const kw of keywords) {
               if (cap.text.includes(kw)) {
                 rawHits.push({ start: cap.start, end: cap.end, category });
@@ -950,82 +1062,6 @@
     localDetectionTimers.push(timerId);
   }
 
-  // --- Method 5: Heuristic Fallback Detection ---
-
-  function detectHeuristicFallback() {
-    const tryDetect = () => {
-      const v = getVid();
-      if (!v || !v.duration || v.duration === Infinity) return;
-
-      // Only for videos > 45 seconds
-      if (v.duration < 45) {
-        log('Heuristic fallback: skipped (video < 45s)', '#aaa');
-        return;
-      }
-
-      // Check per-category — add heuristics for missing categories only
-      const hasIntro = skipSegments.some(s => s.category === 'intro');
-      const hasOutro = skipSegments.some(s => s.category === 'outro');
-
-      if (hasIntro && hasOutro) {
-        log('Heuristic fallback: skipped (intro + outro already found)', '#aaa');
-        return;
-      }
-
-      const dur = v.duration;
-      const newSegments = [];
-
-      // Intro estimate — proportional to video length
-      if (!hasIntro) {
-        let introEnd;
-        if (dur < 120) introEnd = Math.min(10, dur * 0.08);       // < 2 min: ~10s
-        else if (dur < 300) introEnd = Math.min(20, dur * 0.06);  // 2-5 min: ~20s
-        else if (dur < 900) introEnd = Math.min(35, dur * 0.05);  // 5-15 min: ~35s
-        else introEnd = Math.min(50, dur * 0.04);                 // 15+ min: ~50s
-
-        if (introEnd >= 5 && !hasOverlap(0, introEnd)) {
-          newSegments.push({
-            start: 0,
-            end: introEnd,
-            category: 'intro',
-            source: 'heuristic'
-          });
-        }
-      }
-
-      // Outro estimate — proportional to video length
-      if (!hasOutro) {
-        let outroLen;
-        if (dur < 120) outroLen = Math.min(8, dur * 0.08);        // < 2 min: ~8s
-        else if (dur < 300) outroLen = Math.min(15, dur * 0.05);  // 2-5 min: ~15s
-        else if (dur < 900) outroLen = Math.min(25, dur * 0.04);  // 5-15 min: ~25s
-        else outroLen = Math.min(35, dur * 0.03);                 // 15+ min: ~35s
-
-        const outroStart = dur - outroLen;
-        if (outroLen >= 5 && !hasOverlap(outroStart, dur)) {
-          newSegments.push({
-            start: outroStart,
-            end: dur,
-            category: 'outro',
-            source: 'heuristic'
-          });
-        }
-      }
-
-      if (newSegments.length) {
-        mergeSegments(newSegments);
-        log(`Heuristic fallback: added ${newSegments.length} segments (estimated)`, '#ff9f0a');
-        newSegments.forEach(s => {
-          log(`  [heuristic] ${s.category}: ${fmtTime(s.start)} -> ${fmtTime(s.end)}`, '#ff9f0a');
-        });
-      }
-    };
-
-    // Run after other methods have had time (5s delay)
-    const timerId = setTimeout(tryDetect, 5000);
-    localDetectionTimers.push(timerId);
-  }
-
   // --- Utility Functions ---
 
   function parseTimestamp(str) {
@@ -1038,15 +1074,63 @@
     return null;
   }
 
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function matchCategory(text) {
     if (!text) return null;
     const lower = text.toLowerCase();
 
+    // Pass 1: Existing keyword matching (unchanged)
     for (const [category, keywords] of Object.entries(SEGMENT_KEYWORDS)) {
       for (const kw of keywords) {
         if (lower.includes(kw)) return category;
       }
     }
+
+    // Pass 2: Brand-anchored pattern matching
+    let matchedBrand = null;
+    for (const brand of SPONSOR_BRANDS) {
+      if (lower.includes(brand)) {
+        matchedBrand = brand;
+        break;
+      }
+    }
+
+    if (!matchedBrand) return null;
+
+    // Filter out editorial/review content — these are NOT sponsors
+    const brandSafePatterns = [
+      'review', 'vs', 'versus', 'comparison', 'top 10', 'top 5', 'top 20',
+      'tier list', 'ranking', 'rated', 'honest opinion', 'is it worth',
+      'should you buy', 'alternatives', 'problems with'
+    ];
+    for (const safe of brandSafePatterns) {
+      if (lower.includes(safe)) return null;
+    }
+
+    const esc = escapeRegex(matchedBrand);
+
+    // Structural patterns that strongly indicate sponsorship
+    const sponsorPatterns = [
+      new RegExp(`\\b\\w+\\s+with\\s+${esc}\\b`),         // "[word] with [brand]"
+      new RegExp(`\\bft\\.?\\s*${esc}\\b`),                // "ft. [brand]"
+      new RegExp(`\\bfeat\\.?\\s*${esc}\\b`),              // "feat. [brand]"
+      new RegExp(`\\bfeaturing\\s+${esc}\\b`),             // "featuring [brand]"
+      new RegExp(`\\b${esc}\\s+(special|segment|deal|zone|edition)\\b`), // "[brand] special/segment/..."
+      new RegExp(`\\b(powered|presented|brought)\\s+by\\s+${esc}\\b`),  // "powered/presented by [brand]"
+      new RegExp(`\\bunboxing\\s+${esc}\\b`),              // "unboxing [brand]"
+      new RegExp(`\\b${esc}\\s+unboxing\\b`),              // "[brand] unboxing"
+    ];
+
+    for (const pat of sponsorPatterns) {
+      if (pat.test(lower)) return 'sponsor';
+    }
+
+    // Brand name IS the entire chapter title (after stripping emojis/whitespace)
+    if (lower.trim() === matchedBrand) return 'sponsor';
+
     return null;
   }
 
@@ -1087,53 +1171,68 @@
     const url = `${API}?videoID=${videoId}&categories=${encodeURIComponent(CATEGORIES)}`;
     log('Fetching: ' + url);
 
-    try {
-      const res = await fetch(url);
-      log('API response: ' + res.status);
-
-      if (res.status === 404) {
-        log('No segments exist for this video');
-        skipSegments = [];
-        return;
-      }
-
-      if (!res.ok) {
-        log('API error: ' + res.status, 'red');
-        skipSegments = [];
-        return;
-      }
-
-      const data = await res.json();
-      skipSegments = data.map(d => ({
-        start: d.segment[0],
-        end: d.segment[1],
-        category: d.category,
-        source: 'sponsorblock'
-      }));
-
-      log(`Loaded ${skipSegments.length} segments:`, '#30d158');
-      skipSegments.forEach(s => {
-        log(`  ${s.category}: ${fmtTime(s.start)} -> ${fmtTime(s.end)} (${(s.end - s.start).toFixed(0)}s)`);
-      });
-
-    } catch (err) {
-      log('Fetch failed: ' + err.message, 'red');
-
-      // Fallback: try via background script
-      log('Trying background fallback...');
+    // Try direct fetch with one retry
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const resp = await chrome.runtime.sendMessage({ type: 'FETCH_SEGMENTS', videoId });
-        if (resp?.success && resp.segments?.length) {
-          skipSegments = resp.segments.map(s => ({ ...s, source: 'sponsorblock' }));
-          log(`Fallback: loaded ${skipSegments.length} segments`, '#30d158');
-        } else {
-          skipSegments = [];
-          log('Fallback: no segments');
+        const res = await fetch(url);
+        log(`API response: ${res.status} (attempt ${attempt + 1})`);
+
+        if (res.status === 404) {
+          log('No segments on SponsorBlock for this video');
+          return; // no segments — local detection will still run
         }
-      } catch (e2) {
-        log('Fallback also failed: ' + e2.message, 'red');
-        skipSegments = [];
+
+        if (!res.ok) {
+          if (attempt === 0) {
+            log(`API returned ${res.status}, retrying in 2s...`, '#ff9f0a');
+            await new Promise(r => setTimeout(r, 2000));
+            continue; // retry
+          }
+          throw new Error(`API error: ${res.status}`);
+        }
+
+        const data = await res.json();
+        const sbSegments = data.map(d => ({
+          start: d.segment[0],
+          end: d.segment[1],
+          category: d.category,
+          source: 'sponsorblock'
+        }));
+
+        // Merge SponsorBlock segments (they have priority — added first)
+        skipSegments.push(...sbSegments);
+        skipSegments.sort((a, b) => a.start - b.start);
+
+        log(`SponsorBlock: loaded ${sbSegments.length} segments`, '#30d158');
+        sbSegments.forEach(s => {
+          log(`  ${s.category}: ${fmtTime(s.start)} -> ${fmtTime(s.end)} (${(s.end - s.start).toFixed(0)}s)`);
+        });
+        return; // success
+
+      } catch (err) {
+        if (attempt === 0) {
+          log('Fetch failed: ' + err.message + ', retrying...', '#ff9f0a');
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+        log('Fetch failed after retry: ' + err.message, 'red');
       }
+    }
+
+    // Both direct attempts failed — try via background service worker
+    log('Trying background fallback...');
+    try {
+      const resp = await chrome.runtime.sendMessage({ type: 'FETCH_SEGMENTS', videoId });
+      if (resp?.success && resp.segments?.length) {
+        const bgSegments = resp.segments.map(s => ({ ...s, source: 'sponsorblock' }));
+        skipSegments.push(...bgSegments);
+        skipSegments.sort((a, b) => a.start - b.start);
+        log(`Background fallback: loaded ${bgSegments.length} segments`, '#30d158');
+      } else {
+        log('Background fallback: no segments');
+      }
+    } catch (e2) {
+      log('Background fallback failed: ' + e2.message, 'red');
     }
   }
 
@@ -1171,9 +1270,9 @@
   let lastCheckTime = 0;
 
   function check() {
-    // Throttle: skip if called again within 150ms (prevents double-fire from interval + event)
+    // Throttle: skip if called again within 100ms (prevents double-fire from interval + event)
     const now = performance.now();
-    if (now - lastCheckTime < 150) return;
+    if (now - lastCheckTime < 100) return;
     lastCheckTime = now;
 
     const v = getVid();
@@ -1190,7 +1289,7 @@
     for (const seg of skipSegments) {
       const settingKey = KEYS[seg.category];
       if (settingKey && settings[settingKey] === false) continue;
-      if (t >= seg.start && t < seg.end - 0.3) {
+      if (t >= seg.start - 0.2 && t < seg.end - 0.1) {
         hit = seg;
         break;
       }
@@ -1213,9 +1312,20 @@
     }
 
     if (hit) {
+      if (upcomingBtn) removeUpcoming();
       showBtn(hit);
-    } else if (activeBtn) {
-      removeBtn();
+    } else {
+      if (activeBtn) removeBtn();
+
+      // Find nearest upcoming segment within 12 seconds
+      const upcoming = skipSegments.find(seg => {
+        const settingKey = KEYS[seg.category];
+        if (settingKey && settings[settingKey] === false) return false;
+        const delta = seg.start - t;
+        return delta > 0 && delta <= 12;
+      });
+      if (upcoming) showUpcoming(upcoming, t);
+      else if (upcomingBtn) removeUpcoming();
     }
   }
 
@@ -1235,10 +1345,11 @@
     el.setAttribute('data-category', seg.category);
     el.innerHTML = `
       <div id="pt-skip-inner">
+        <span id="pt-skip-dot"></span>
         <svg id="pt-skip-icon" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
         <span id="pt-skip-title">Skip ${label}</span>
         <span id="pt-skip-time">${remaining}s</span>
-        <kbd id="pt-skip-kbd">Enter</kbd>
+        <span id="pt-skip-kbd">↵</span>
         <div id="pt-skip-progress"></div>
       </div>
     `;
@@ -1266,7 +1377,7 @@
     document.addEventListener('fullscreenchange', posBtn);
 
     // Animate in
-    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('pt-visible')));
+    requestAnimationFrame(() => el.classList.add('pt-visible'));
 
     // Progress bar + live countdown
     const prog = el.querySelector('#pt-skip-progress');
@@ -1290,11 +1401,14 @@
   function posBtn() {
     if (!activeBtn) return;
     const p = getPlayer();
-    if (!p) return;
+    if (!p) { activeBtn.style.opacity = '0'; return; }
     const r = p.getBoundingClientRect();
+    const isFullscreen = !!document.fullscreenElement;
+    // YouTube controls bar is ~48px; place skip button well above it
+    const offset = isFullscreen ? 90 : 80;
 
     activeBtn.style.position = 'fixed';
-    activeBtn.style.bottom = (window.innerHeight - r.bottom + 80) + 'px';
+    activeBtn.style.bottom = (window.innerHeight - r.bottom + offset) + 'px';
     activeBtn.style.right = (window.innerWidth - r.right + 16) + 'px';
   }
 
@@ -1302,14 +1416,34 @@
     const v = getVid();
     if (!v) return;
     const saved = Math.max(0, Math.round(seg.end - v.currentTime));
+    const label = LABELS[seg.category] || seg.category;
     log(`SKIPPED: ${seg.category} [${seg.source || 'unknown'}] ${fmtTime(v.currentTime)} -> ${fmtTime(seg.end)} (saved ${saved}s)`, '#30d158');
 
     v.currentTime = seg.end;
     removeBtn();
     trackStat(saved);
-    if (settings.showToasts) {
-      showToast(`Skipped ${LABELS[seg.category] || seg.category} · saved ${saved}s`);
+    showToast(`Skipped ${label}` + (saved > 0 ? ` \u00b7 saved ${saved}s` : ''));
+  }
+
+  // ---- Toast notification ----
+  let toastTimer = null;
+  function showToast(msg) {
+    let el = document.getElementById('premiumtube-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'premiumtube-toast';
+      document.body.appendChild(el);
     }
+    clearTimeout(toastTimer);
+    el.textContent = msg;
+    el.className = '';
+    // Trigger reflow so transition replays
+    void el.offsetWidth;
+    el.classList.add('pt-toast-show');
+    toastTimer = setTimeout(() => {
+      el.classList.remove('pt-toast-show');
+      el.classList.add('pt-toast-hide');
+    }, 2500);
   }
 
   function removeBtn() {
@@ -1334,6 +1468,89 @@
       // No active button, just clean up any orphans
       document.querySelectorAll('#pt-skip-button').forEach(e => e.remove());
     }
+  }
+
+  // ==================== UPCOMING SEGMENT PREVIEW ====================
+
+  function showUpcoming(seg, currentTime) {
+    // If already showing this segment's upcoming, just update countdown
+    if (upcomingSeg === seg && upcomingBtn) {
+      const countEl = upcomingBtn.querySelector('#pt-upcoming-count');
+      if (countEl) {
+        const delta = Math.max(0, Math.ceil(seg.start - currentTime));
+        countEl.textContent = `in ${delta}s`;
+      }
+      return;
+    }
+
+    removeUpcoming();
+    upcomingSeg = seg;
+
+    const label = LABELS[seg.category] || seg.category;
+    const delta = Math.max(0, Math.ceil(seg.start - currentTime));
+
+    const el = document.createElement('div');
+    el.id = 'pt-upcoming-segment';
+    el.setAttribute('data-category', seg.category);
+    el.innerHTML = `
+      <span class="pt-upcoming-dot"></span>
+      <span class="pt-upcoming-label">${label}</span>
+      <span id="pt-upcoming-count">in ${delta}s</span>
+    `;
+
+    document.body.appendChild(el);
+    upcomingBtn = el;
+
+    posUpcoming();
+    upcomingPosTimer = setInterval(posUpcoming, 150);
+    window.addEventListener('resize', posUpcoming);
+    document.addEventListener('fullscreenchange', posUpcoming);
+
+    requestAnimationFrame(() => el.classList.add('pt-upcoming-visible'));
+
+    // Live countdown
+    const tick = () => {
+      if (!upcomingBtn || upcomingSeg !== seg) return;
+      const vid = getVid();
+      if (vid) {
+        const d = Math.max(0, Math.ceil(seg.start - vid.currentTime));
+        const countEl = upcomingBtn.querySelector('#pt-upcoming-count');
+        if (countEl) countEl.textContent = `in ${d}s`;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    log(`UPCOMING: "${label}" in ${delta}s [${seg.source || 'unknown'}]`, '#ff9f0a');
+  }
+
+  function removeUpcoming() {
+    if (upcomingPosTimer) { clearInterval(upcomingPosTimer); upcomingPosTimer = null; }
+    window.removeEventListener('resize', posUpcoming);
+    document.removeEventListener('fullscreenchange', posUpcoming);
+    if (upcomingBtn) {
+      upcomingBtn.classList.remove('pt-upcoming-visible');
+      const fadingEl = upcomingBtn;
+      upcomingBtn = null;
+      upcomingSeg = null;
+      setTimeout(() => fadingEl.remove(), 300);
+    }
+    document.querySelectorAll('#pt-upcoming-segment').forEach(e => {
+      if (e !== upcomingBtn) e.remove();
+    });
+  }
+
+  function posUpcoming() {
+    if (!upcomingBtn) return;
+    const p = getPlayer();
+    if (!p) { upcomingBtn.style.opacity = '0'; return; }
+    const r = p.getBoundingClientRect();
+    const isFullscreen = !!document.fullscreenElement;
+    const baseOffset = isFullscreen ? 90 : 80;
+    upcomingBtn.style.position = 'fixed';
+    // Sits at same spot as skip button (upcoming hides when skip shows)
+    upcomingBtn.style.bottom = (window.innerHeight - r.bottom + baseOffset) + 'px';
+    upcomingBtn.style.right = (window.innerWidth - r.right + 16) + 'px';
   }
 
   // ==================== SEEKBAR MARKERS ====================
@@ -1385,9 +1602,9 @@
     const h = () => {
       const id = getVidId();
       if (id && id !== currentVideoId) {
-        currentVideoId = null; skipSegments = []; stop(); removeBtn(); removeSeekbarMarkers(); cleanupLocalDetection(); attach();
+        currentVideoId = null; skipSegments = []; stop(); removeBtn(); removeUpcoming(); removeSeekbarMarkers(); cleanupLocalDetection(); attach();
       } else if (!id) {
-        currentVideoId = null; skipSegments = []; stop(); removeBtn(); removeSeekbarMarkers(); cleanupLocalDetection();
+        currentVideoId = null; skipSegments = []; stop(); removeBtn(); removeUpcoming(); removeSeekbarMarkers(); cleanupLocalDetection();
       }
     };
     window.addEventListener('yt-navigate-finish', h);
@@ -1411,12 +1628,15 @@
 
   // ==================== PIP ====================
 
+  let pipAutoTriggered = false; // track if WE triggered PiP (not the user)
+
   function setupPiP() {
     document.addEventListener('keydown', (e) => {
       if (e.altKey && e.key.toLowerCase() === 'p' && settings.pipEnabled) {
         e.preventDefault();
         const v = getVid();
         if (!v) return;
+        pipAutoTriggered = false; // manual toggle — don't auto-exit
         if (document.pictureInPictureElement) document.exitPictureInPicture().catch(() => {});
         else v.requestPictureInPicture().catch(() => {});
       }
@@ -1424,8 +1644,20 @@
     document.addEventListener('visibilitychange', () => {
       if (!settings.pipEnabled || !settings.pipAutoSwitch) return;
       const v = getVid();
-      if (v && !v.paused && document.hidden && !document.pictureInPictureElement) {
-        v.requestPictureInPicture().catch(() => {});
+
+      if (document.hidden) {
+        // Leaving tab — enter PiP
+        if (v && !v.paused && !document.pictureInPictureElement) {
+          v.requestPictureInPicture().then(() => {
+            pipAutoTriggered = true;
+          }).catch(() => {});
+        }
+      } else {
+        // Returning to tab — exit PiP (only if we auto-triggered it)
+        if (pipAutoTriggered && document.pictureInPictureElement) {
+          document.exitPictureInPicture().catch(() => {});
+          pipAutoTriggered = false;
+        }
       }
     });
   }
@@ -1566,141 +1798,204 @@
     qualityTimer = setInterval(trySet, 500);
   }
 
-  // ==================== VIDEO ENHANCEMENT ====================
+  // ==================== AUTO-DISMISS POPUPS ====================
 
-  function setupVideoEnhancement() {
-    if (settings.disableAmbient !== false) disableAmbientMode();
-    if (settings.videoSharpening !== false) applySharpening();
-    if (settings.preferAV1 !== false) forceAV1Codec();
+  let autoDismissObserver = null;
+
+  function setupAutoDismiss() {
+    if (settings.autoDismissPopups === false) return;
+    if (autoDismissObserver) return;
+
+    autoDismissObserver = new MutationObserver(() => {
+      if (settings.autoDismissPopups === false) return;
+
+      // "Are you still watching?" confirm dialog
+      const confirmDialogs = document.querySelectorAll('yt-confirm-dialog-renderer');
+      for (const dialog of confirmDialogs) {
+        const text = (dialog.textContent || '').toLowerCase();
+        if (text.includes('still watching') || text.includes('continue watching') || text.includes('video paused')) {
+          const confirmBtn = dialog.querySelector('#confirm-button button, #confirm-button, .yt-spec-button-shape-next');
+          if (confirmBtn) {
+            confirmBtn.click();
+            log('Auto-dismissed "Are you still watching?" popup', '#30d158');
+          }
+        }
+      }
+
+      // Paper dialog confirmations
+      const paperDialogs = document.querySelectorAll('tp-yt-paper-dialog');
+      for (const dialog of paperDialogs) {
+        const text = (dialog.textContent || '').toLowerCase();
+        if (text.includes('still watching') || text.includes('continue watching') || text.includes('video paused')) {
+          const btn = dialog.querySelector('button, .yt-spec-button-shape-next, #confirm-button button, yt-button-renderer button');
+          if (btn) {
+            btn.click();
+            log('Auto-dismissed confirmation dialog', '#30d158');
+          }
+        }
+      }
+
+      // Popup container with confirm dialog
+      const popupConfirm = document.querySelector('.ytd-popup-container yt-confirm-dialog-renderer #confirm-button button');
+      if (popupConfirm) {
+        const container = popupConfirm.closest('yt-confirm-dialog-renderer');
+        const text = (container?.textContent || '').toLowerCase();
+        if (text.includes('still watching') || text.includes('continue watching')) {
+          popupConfirm.click();
+          log('Auto-dismissed popup confirm button', '#30d158');
+        }
+      }
+    });
+
+    autoDismissObserver.observe(document.body, { childList: true, subtree: true });
+    log('Auto-dismiss popups enabled', '#5ac8fa');
   }
 
-  // --- Disable Ambient Mode / HDR dimming ---
+  // ==================== HIDE PREMIUM UPSELLS ====================
 
-  function disableAmbientMode() {
-    if (document.getElementById('pt-ambient-disable-css')) return;
+  function setupHidePremiumUpsells() {
+    if (settings.hidePremiumUpsells === false) return;
+    if (document.getElementById('pt-hide-premium-upsells')) return;
+
     const style = document.createElement('style');
-    style.id = 'pt-ambient-disable-css';
+    style.id = 'pt-hide-premium-upsells';
     style.textContent = `
-      #cinematics,
-      #cinematics-container,
-      .ytd-cinematic-container-renderer,
-      #cinematics canvas,
-      #cinematics .ytd-cinematic-container-renderer {
+      ytd-mealbar-promo-renderer,
+      ytd-statement-banner-renderer,
+      ytd-brand-video-singleton-renderer,
+      #premium-upsell,
+      yt-button-renderer[is-premium-upsell],
+      ytd-popup-container tp-yt-paper-dialog:has([href*="premium"]),
+      ytd-popup-container tp-yt-paper-dialog:has([href*="youtube.com/premium"]),
+      .ytd-popup-container [href*="premium"],
+      tp-yt-paper-dialog:has(yt-premium-upsell-dialog-renderer),
+      ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-upsell"],
+      ytd-guide-entry-renderer:has(a[href*="premium"]),
+      ytd-mini-guide-entry-renderer:has(a[href*="premium"]),
+      #items ytd-compact-link-renderer:has(a[href*="premium"]),
+      ytd-banner-promo-renderer:has([href*="premium"]),
+      tp-yt-paper-dialog:has([href*="youtube.com/premium"]) {
         display: none !important;
       }
-      /* Disable HDR tone-mapping dimming */
-      video.html5-main-video {
-        --ytd-cinema-bg: transparent !important;
-      }
     `;
     document.head.appendChild(style);
-    log('Ambient mode disabled', '#5ac8fa');
+    log('Premium upsell hiding enabled', '#5ac8fa');
   }
 
-  function removeAmbientDisable() {
-    const el = document.getElementById('pt-ambient-disable-css');
+  function removeHidePremiumUpsells() {
+    const el = document.getElementById('pt-hide-premium-upsells');
     if (el) el.remove();
-    log('Ambient mode re-enabled', '#5ac8fa');
+    log('Premium upsell hiding disabled', '#5ac8fa');
   }
 
-  // --- CSS Sharpening Filter ---
+  // ==================== CONTINUOUS PLAY ====================
 
-  function applySharpening() {
-    if (document.getElementById('pt-sharpen-svg')) return;
+  let continuousPlayInitialized = false;
+  let continuousUserPaused = false;
+  let continuousPlayObserver = null;
 
-    // SVG convolution filter for subtle sharpening
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('id', 'pt-sharpen-svg');
-    svg.style.cssText = 'position:absolute;width:0;height:0;pointer-events:none';
-    svg.innerHTML = `
-      <defs>
-        <filter id="pt-sharpen" color-interpolation-filters="sRGB">
-          <feConvolveMatrix order="3"
-            kernelMatrix="0 -0.3 0 -0.3 2.2 -0.3 0 -0.3 0"
-            preserveAlpha="true"/>
-        </filter>
-      </defs>
-    `;
-    document.body.appendChild(svg);
+  function setupContinuousPlay() {
+    if (settings.continuousPlay === false) return;
+    if (continuousPlayInitialized) return;
+    continuousPlayInitialized = true;
 
-    const style = document.createElement('style');
-    style.id = 'pt-sharpen-css';
-    style.textContent = `
-      video.html5-main-video,
-      #movie_player video {
-        filter: url(#pt-sharpen) contrast(1.03) saturate(1.05) !important;
+    // Track user-initiated pauses
+    document.addEventListener('click', (e) => {
+      if (!settings.continuousPlay) return;
+      const playBtn = e.target.closest('.ytp-play-button');
+      if (playBtn) {
+        const v = getVid();
+        if (v && !v.paused) continuousUserPaused = true;
+        else continuousUserPaused = false;
       }
-    `;
-    document.head.appendChild(style);
-    log('Video sharpening enabled', '#5ac8fa');
-  }
+    });
 
-  function removeSharpening() {
-    const svg = document.getElementById('pt-sharpen-svg');
-    const css = document.getElementById('pt-sharpen-css');
-    if (svg) svg.remove();
-    if (css) css.remove();
-    log('Video sharpening disabled', '#5ac8fa');
-  }
+    document.addEventListener('keydown', (e) => {
+      if (!settings.continuousPlay) return;
+      if (e.key === ' ' || e.key.toLowerCase() === 'k') {
+        const a = document.activeElement;
+        if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+        const v = getVid();
+        if (v && !v.paused) continuousUserPaused = true;
+        else continuousUserPaused = false;
+      }
+    });
 
-  // --- Force AV1 Codec ---
+    // Monitor for pause events not initiated by user
+    const attachPauseListener = () => {
+      const v = getVid();
+      if (!v) {
+        setTimeout(attachPauseListener, 1000);
+        return;
+      }
 
-  function forceAV1Codec() {
-    // AV1 preference is set via page-inject.js (MAIN world script)
-    // Here we just try the player API from the content script side
-    let attempts = 0;
-    const tryForce = () => {
-      const player = document.querySelector('#movie_player');
-      if (player) {
-        try {
-          if (typeof player.setOption === 'function') {
-            player.setOption('player', 'preferAv1', true);
+      v.addEventListener('pause', () => {
+        if (!settings.continuousPlay) return;
+        if (continuousUserPaused) return;
+
+        // Don't resume if video has ended
+        if (v.ended || (v.duration && v.currentTime >= v.duration - 0.5)) return;
+
+        // Don't resume if an ad is playing
+        if (isAdPlaying()) return;
+
+        // Small delay to distinguish YouTube-initiated pauses from user actions
+        setTimeout(() => {
+          if (v.paused && !v.ended && !continuousUserPaused && settings.continuousPlay) {
+            v.play().catch(() => {});
+            log('Continuous play: resumed YouTube-paused video', '#30d158');
           }
-        } catch (e) {}
-      }
-      if (++attempts < 10) setTimeout(tryForce, 2000);
+        }, 200);
+      });
+
+      v.addEventListener('play', () => {
+        continuousUserPaused = false;
+      });
     };
-    setTimeout(tryForce, 3000);
-    log('AV1 codec preference set', '#5ac8fa');
-  }
+    attachPauseListener();
 
-  // ==================== PREMIUM ====================
+    // Reset user pause flag on video change
+    window.addEventListener('yt-navigate-finish', () => {
+      continuousUserPaused = false;
+    });
 
-  let shortsObserver = null;
+    // MutationObserver for pause overlay dialogs
+    continuousPlayObserver = new MutationObserver(() => {
+      if (!settings.continuousPlay) return;
 
-  function applyPremium() {
-    if (!settings.isPremium) return;
-    if (settings.theaterDefault) {
-      setTimeout(() => {
-        const b = document.querySelector('button.ytp-size-button');
-        if (b && !document.querySelector('ytd-watch-flexy[theater]')) b.click();
-      }, 1500);
-    }
-    if (settings.removeShorts && !shortsObserver) {
-      const rm = () => ['ytd-rich-shelf-renderer[is-shorts]','ytd-reel-shelf-renderer','[is-shorts]',
-        'ytd-mini-guide-entry-renderer[aria-label="Shorts"]'].forEach(s =>
-          document.querySelectorAll(s).forEach(e => e.style.display = 'none'));
-      rm();
-      shortsObserver = new MutationObserver(rm);
-      shortsObserver.observe(document.body, { childList: true, subtree: true });
-    }
-  }
+      // "Video paused. Continue watching?" overlay
+      const pauseOverlay = document.querySelector('.ytp-pause-overlay');
+      if (pauseOverlay && pauseOverlay.offsetParent !== null) {
+        const btn = pauseOverlay.querySelector('button, .ytp-pause-overlay-button');
+        if (btn) {
+          btn.click();
+          log('Continuous play: dismissed pause overlay', '#30d158');
+        } else {
+          // No button — just resume
+          const v = getVid();
+          if (v && v.paused && !v.ended) {
+            v.play().catch(() => {});
+            log('Continuous play: resumed from pause overlay', '#30d158');
+          }
+        }
+      }
 
-  // ==================== TOAST ====================
+      // "Continue watching?" dialog
+      const dialogs = document.querySelectorAll('tp-yt-paper-dialog, yt-confirm-dialog-renderer');
+      for (const dialog of dialogs) {
+        const text = (dialog.textContent || '').toLowerCase();
+        if (text.includes('continue watching') || text.includes('video paused')) {
+          const btn = dialog.querySelector('button, #confirm-button button, .yt-spec-button-shape-next');
+          if (btn) {
+            btn.click();
+            log('Continuous play: dismissed continue watching dialog', '#30d158');
+          }
+        }
+      }
+    });
 
-  function showToast(msg) {
-    document.getElementById('premiumtube-toast')?.remove();
-    const t = document.createElement('div');
-    t.id = 'premiumtube-toast';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    t.offsetHeight;
-    t.classList.add('pt-toast-show');
-    setTimeout(() => {
-      t.classList.remove('pt-toast-show');
-      t.classList.add('pt-toast-hide');
-      setTimeout(() => t.remove(), 300);
-    }, 2000);
+    continuousPlayObserver.observe(document.body, { childList: true, subtree: true });
+    log('Continuous play enabled', '#5ac8fa');
   }
 
   // ==================== START ====================

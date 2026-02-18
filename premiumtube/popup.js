@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggles = document.querySelectorAll('input[data-setting]');
   const featureCountEl = document.getElementById('featureCount');
   const openSettingsBtn = document.getElementById('openSettings');
-  const premiumBtn = document.getElementById('premiumBtn');
   const segmentsEl = document.getElementById('segmentsSkipped');
   const timeSavedEl = document.getElementById('timeSaved');
 
@@ -33,34 +32,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Apply toggles
   toggles.forEach(toggle => {
     const key = toggle.dataset.setting;
-    const isPremium = toggle.dataset.premium === 'true';
-
     toggle.checked = !!settings[key];
 
-    if (isPremium && !settings.isPremium) {
-      toggle.disabled = true;
-      toggle.checked = false;
-    }
-
     toggle.addEventListener('change', async () => {
-      if (isPremium && !settings.isPremium) {
-        toggle.checked = false;
-        chrome.runtime.openOptionsPage();
-        return;
-      }
       await chrome.storage.sync.set({ [key]: toggle.checked });
       settings[key] = toggle.checked;
       updateCount();
     });
   });
-
-  // Premium button
-  if (settings.isPremium) {
-    premiumBtn.textContent = 'Premium Active';
-    premiumBtn.classList.add('unlocked');
-  } else {
-    premiumBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
-  }
 
   openSettingsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
 

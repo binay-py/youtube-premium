@@ -23,17 +23,17 @@ ytd-in-feed-ad-layout-renderer,
    CATEGORY COLOR TOKENS
    ========================================================================= */
 
-#pt-skip-button[data-category="sponsor"]       { --pt-c: #ff9f0a; --pt-glow: rgba(255,159,10,0.25); --pt-soft: rgba(255,159,10,0.08); }
-#pt-skip-button[data-category="intro"]         { --pt-c: #5ac8fa; --pt-glow: rgba(90,200,250,0.25);  --pt-soft: rgba(90,200,250,0.08);  }
-#pt-skip-button[data-category="outro"]         { --pt-c: #bf5af2; --pt-glow: rgba(191,90,242,0.25);  --pt-soft: rgba(191,90,242,0.08);  }
-#pt-skip-button[data-category="selfpromo"]     { --pt-c: #ff375f; --pt-glow: rgba(255,55,95,0.25);   --pt-soft: rgba(255,55,95,0.08);   }
-#pt-skip-button[data-category="interaction"]   { --pt-c: #30d158; --pt-glow: rgba(48,209,88,0.25);   --pt-soft: rgba(48,209,88,0.08);   }
-#pt-skip-button[data-category="music_offtopic"]{ --pt-c: #64d2ff; --pt-glow: rgba(100,210,255,0.25); --pt-soft: rgba(100,210,255,0.08); }
-#pt-skip-button[data-category="preview"]       { --pt-c: #ffd60a; --pt-glow: rgba(255,214,10,0.25);  --pt-soft: rgba(255,214,10,0.08);  }
-#pt-skip-button[data-category="filler"]        { --pt-c: #ac8e68; --pt-glow: rgba(172,142,104,0.25); --pt-soft: rgba(172,142,104,0.08); }
+#pt-skip-button[data-category="sponsor"]        { --cat: #ffaa33; }
+#pt-skip-button[data-category="intro"]          { --cat: #2ec4f6; }
+#pt-skip-button[data-category="outro"]          { --cat: #a855f7; }
+#pt-skip-button[data-category="selfpromo"]      { --cat: #f43f5e; }
+#pt-skip-button[data-category="interaction"]    { --cat: #22c55e; }
+#pt-skip-button[data-category="music_offtopic"] { --cat: #38bdf8; }
+#pt-skip-button[data-category="preview"]        { --cat: #eab308; }
+#pt-skip-button[data-category="filler"]         { --cat: #a8896c; }
 
 /* =========================================================================
-   SKIP BUTTON
+   SKIP BUTTON  –  YouTube-style white pill, always visible
    ========================================================================= */
 
 #pt-skip-button {
@@ -43,115 +43,99 @@ ytd-in-feed-ad-layout-renderer,
   user-select: none !important;
   pointer-events: auto !important;
 
-  /* Entry: slide up + fade */
   opacity: 0 !important;
-  transform: translateY(12px) scale(0.92) !important;
-  transition: opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
-              transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  transform: translateY(6px) !important;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out !important;
+  will-change: opacity, transform !important;
 }
 
 #pt-skip-button.pt-visible {
   opacity: 1 !important;
-  transform: translateY(0) scale(1) !important;
+  transform: translateY(0) !important;
 }
 
 /* ---- Inner card ---- */
 #pt-skip-inner {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
-  height: 46px !important;
-  padding: 0 16px 0 0 !important;
-  border-radius: 12px !important;
+  gap: 8px !important;
+  height: 40px !important;
+  padding: 0 16px 0 12px !important;
+  border-radius: 22px !important;
   position: relative !important;
   overflow: hidden !important;
 
-  /* Dark glass */
-  background: rgba(10, 10, 14, 0.88) !important;
-  backdrop-filter: blur(24px) saturate(1.6) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+  /* White pill — always stands out */
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
 
-  /* Border + accent left edge */
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-left: 3.5px solid var(--pt-c) !important;
-
-  /* Depth + category ambient glow */
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    0 0 20px -4px var(--pt-glow) !important;
-
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease,
-              border-color 0.2s ease !important;
+  transition: background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease !important;
 }
 
-/* Hover lift */
 #pt-skip-button:hover #pt-skip-inner {
-  transform: translateY(-2px) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  box-shadow:
-    0 14px 44px rgba(0, 0, 0, 0.55),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    0 0 32px -2px var(--pt-glow) !important;
+  background: #fff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-1px) !important;
 }
 
-/* Click press */
 #pt-skip-button:active #pt-skip-inner {
-  transform: translateY(0) scale(0.97) !important;
-  transition-duration: 0.06s !important;
+  transform: scale(0.97) !important;
+  transition-duration: 0.05s !important;
+}
+
+/* ---- Category dot ---- */
+#pt-skip-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: var(--cat, #666) !important;
+  flex-shrink: 0 !important;
 }
 
 /* ---- Skip icon ---- */
 #pt-skip-icon {
-  width: 20px !important;
-  height: 20px !important;
-  fill: var(--pt-c) !important;
+  width: 16px !important;
+  height: 16px !important;
+  fill: #0f0f0f !important;
   flex-shrink: 0 !important;
-  margin-left: 14px !important;
-  filter: drop-shadow(0 0 4px var(--pt-glow)) !important;
 }
 
 /* ---- Title ---- */
 #pt-skip-title {
-  font-family: 'YouTube Sans', 'Roboto', -apple-system, system-ui, sans-serif !important;
+  font-family: 'Roboto', 'Arial', sans-serif !important;
   font-size: 14px !important;
-  font-weight: 600 !important;
-  color: #fff !important;
+  font-weight: 500 !important;
+  color: #0f0f0f !important;
   white-space: nowrap !important;
-  letter-spacing: -0.2px !important;
+  letter-spacing: -0.1px !important;
   line-height: 1 !important;
 }
 
 /* ---- Countdown time ---- */
 #pt-skip-time {
-  font-family: 'YouTube Sans', 'Roboto', monospace !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: var(--pt-c) !important;
+  font-family: 'Roboto', 'Arial', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #606060 !important;
   white-space: nowrap !important;
-  padding: 3px 7px !important;
-  background: var(--pt-soft) !important;
-  border-radius: 6px !important;
-  letter-spacing: 0.3px !important;
-  min-width: 28px !important;
+  padding: 2px 8px !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-radius: 10px !important;
+  min-width: 24px !important;
   text-align: center !important;
 }
 
-/* ---- Keyboard shortcut ---- */
+/* ---- Keyboard shortcut hint ---- */
 #pt-skip-kbd {
-  font-family: 'YouTube Sans', 'Roboto', -apple-system, system-ui, sans-serif !important;
+  font-family: 'Roboto', 'Arial', sans-serif !important;
   font-size: 10px !important;
-  font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.3) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-bottom-width: 2px !important;
-  border-radius: 5px !important;
-  padding: 2px 8px !important;
-  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  color: #999 !important;
+  white-space: nowrap !important;
   flex-shrink: 0 !important;
-  letter-spacing: 0.2px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
 }
 
 /* ---- Progress bar ---- */
@@ -161,10 +145,10 @@ ytd-in-feed-ad-layout-renderer,
   left: 0 !important;
   height: 3px !important;
   width: 0 !important;
-  background: var(--pt-c) !important;
-  border-radius: 0 0 12px 12px !important;
+  background: var(--cat, #0f0f0f) !important;
+  border-radius: 0 0 22px 22px !important;
   pointer-events: none !important;
-  box-shadow: 0 0 8px var(--pt-glow) !important;
+  opacity: 0.8 !important;
 }
 
 /* =========================================================================
@@ -178,79 +162,134 @@ ytd-in-feed-ad-layout-renderer,
   z-index: 51 !important;
   border-radius: 1px !important;
   pointer-events: none !important;
-  opacity: 0.55 !important;
+  opacity: 0.5 !important;
   transition: opacity 0.2s ease !important;
 }
 
-/* Brighter on hover over progress bar */
 .ytp-progress-bar:hover .pt-seekbar-marker {
-  opacity: 0.9 !important;
+  opacity: 0.85 !important;
 }
 
-.pt-seekbar-marker[data-category="sponsor"]        { background: #ff9f0a !important; }
-.pt-seekbar-marker[data-category="intro"]          { background: #5ac8fa !important; }
-.pt-seekbar-marker[data-category="outro"]          { background: #bf5af2 !important; }
-.pt-seekbar-marker[data-category="selfpromo"]      { background: #ff375f !important; }
-.pt-seekbar-marker[data-category="interaction"]    { background: #30d158 !important; }
-.pt-seekbar-marker[data-category="music_offtopic"] { background: #64d2ff !important; }
-.pt-seekbar-marker[data-category="preview"]        { background: #ffd60a !important; }
-.pt-seekbar-marker[data-category="filler"]         { background: #ac8e68 !important; }
+.pt-seekbar-marker[data-category="sponsor"]        { background: #ffaa33 !important; }
+.pt-seekbar-marker[data-category="intro"]          { background: #2ec4f6 !important; }
+.pt-seekbar-marker[data-category="outro"]          { background: #a855f7 !important; }
+.pt-seekbar-marker[data-category="selfpromo"]      { background: #f43f5e !important; }
+.pt-seekbar-marker[data-category="interaction"]    { background: #22c55e !important; }
+.pt-seekbar-marker[data-category="music_offtopic"] { background: #38bdf8 !important; }
+.pt-seekbar-marker[data-category="preview"]        { background: #eab308 !important; }
+.pt-seekbar-marker[data-category="filler"]         { background: #a8896c !important; }
 
 /* =========================================================================
-   TOAST NOTIFICATION
+   UPCOMING SEGMENT PREVIEW  –  visible dark chip
+   ========================================================================= */
+
+#pt-upcoming-segment[data-category="sponsor"]        { --cat: #ffaa33; }
+#pt-upcoming-segment[data-category="intro"]          { --cat: #2ec4f6; }
+#pt-upcoming-segment[data-category="outro"]          { --cat: #a855f7; }
+#pt-upcoming-segment[data-category="selfpromo"]      { --cat: #f43f5e; }
+#pt-upcoming-segment[data-category="interaction"]    { --cat: #22c55e; }
+#pt-upcoming-segment[data-category="music_offtopic"] { --cat: #38bdf8; }
+#pt-upcoming-segment[data-category="preview"]        { --cat: #eab308; }
+#pt-upcoming-segment[data-category="filler"]         { --cat: #a8896c; }
+
+#pt-upcoming-segment {
+  position: fixed !important;
+  z-index: 2147483646 !important;
+  cursor: default !important;
+  user-select: none !important;
+  pointer-events: none !important;
+
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 16px !important;
+
+  background: rgba(0, 0, 0, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+
+  opacity: 0 !important;
+  transform: translateY(4px) !important;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out !important;
+  will-change: opacity, transform !important;
+}
+
+#pt-upcoming-segment.pt-upcoming-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.pt-upcoming-dot {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  background: var(--cat, #fff) !important;
+  flex-shrink: 0 !important;
+}
+
+.pt-upcoming-label {
+  font-family: 'Roboto', 'Arial', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+}
+
+#pt-upcoming-count {
+  font-family: 'Roboto', 'Arial', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  white-space: nowrap !important;
+}
+
+/* =========================================================================
+   TOAST NOTIFICATION  –  YouTube snackbar style
    ========================================================================= */
 
 #premiumtube-toast {
   position: fixed !important;
   bottom: 24px !important;
-  right: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(8px) !important;
   z-index: 2147483647 !important;
 
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 
-  background: rgba(10, 10, 14, 0.9) !important;
-  backdrop-filter: blur(20px) saturate(1.4) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+  background: #323232 !important;
   color: #fff !important;
-  padding: 12px 18px !important;
-  border-radius: 12px !important;
-  font-family: 'YouTube Sans', 'Roboto', -apple-system, system-ui, sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-family: 'Roboto', 'Arial', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
   line-height: 1.3 !important;
-  max-width: 300px !important;
+  max-width: 340px !important;
   pointer-events: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-              0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
 
   opacity: 0 !important;
-  transform: translateY(12px) scale(0.94) !important;
-  transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out !important;
 }
 
 #premiumtube-toast::before {
-  content: '' !important;
-  width: 22px !important;
-  height: 22px !important;
+  content: '\2713' !important;
+  color: #22c55e !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
   flex-shrink: 0 !important;
-  background: rgba(48, 209, 88, 0.12) !important;
-  border-radius: 50% !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2330d158'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E") !important;
-  background-size: 13px !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
 }
 
 #premiumtube-toast.pt-toast-show {
   opacity: 1 !important;
-  transform: translateY(0) scale(1) !important;
+  transform: translateX(-50%) translateY(0) !important;
 }
 
 #premiumtube-toast.pt-toast-hide {
   opacity: 0 !important;
-  transform: translateY(12px) scale(0.94) !important;
+  transform: translateX(-50%) translateY(8px) !important;
 }

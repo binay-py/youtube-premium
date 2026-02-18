@@ -20,22 +20,15 @@ const DEFAULT_SETTINGS = {
   skipFiller: true,
   adSkip: true,
   pipEnabled: true,
-  pipAutoSwitch: false,
+  pipAutoSwitch: true,
   backgroundPlay: true,
-  showToasts: true,
   autoMaxQuality: true,
 
-  // Video enhancement
-  preferAV1: true,
-  disableAmbient: true,
-  videoSharpening: true,
+  // Premium feel
+  autoDismissPopups: true,
+  hidePremiumUpsells: true,
+  continuousPlay: true,
 
-  // Phase 2 - Premium features
-  theaterDefault: false,
-  removeShorts: false,
-
-  // Premium status
-  isPremium: false
 };
 
 // Initialize default settings on install
@@ -68,6 +61,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
+
 });
 
 // Fetch skip segments from SponsorBlock API with caching
