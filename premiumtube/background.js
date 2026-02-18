@@ -19,6 +19,12 @@ const DEFAULT_SETTINGS = {
   pipAutoSwitch: false,
   backgroundPlay: true,
   showToasts: true,
+  autoMaxQuality: true,
+
+  // Video enhancement
+  preferAV1: true,
+  disableAmbient: true,
+  videoSharpening: true,
 
   // Phase 2 - Premium features
   theaterDefault: false,
