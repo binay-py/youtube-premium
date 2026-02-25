@@ -419,31 +419,16 @@
     const player = getPlayer();
     if (!player) return false;
 
-    // Class-based detection (primary)
+    // Class-based detection (most reliable — YouTube sets these on the player)
     if (player.classList.contains('ad-showing')
-      || player.classList.contains('ad-interrupting')
-      || player.classList.contains('ad-created')) return true;
+      || player.classList.contains('ad-interrupting')) return true;
 
-    // DOM element detection
+    // Visible ad overlay detection (only elements that confirm a video ad)
     if (document.querySelector(
       '.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, ' +
-      '.ytp-ad-action-interstitial, .ytp-ad-player-overlay-instream-info, ' +
-      '.ytp-ad-text, .ytp-ad-preview-container, .ytp-ad-badge, ' +
-      '.ytp-ad-visit-advertiser-button, .ad-showing, ' +
-      '.ytp-ad-skip-button-modern, .ytp-ad-button-text, ' +
-      'div.ytp-ad-persistent-progress-bar-container'
+      '.ytp-ad-action-interstitial, .ytp-ad-skip-button-modern, ' +
+      '.ytp-ad-skip-button-container'
     )) return true;
-
-    // Ad countdown text detection
-    const adText = document.querySelector('.ytp-ad-text');
-    if (adText && adText.textContent && adText.textContent.length > 0) return true;
-
-    // Video source detection - ad videos use different URL patterns
-    const v = getVid();
-    if (v && v.src) {
-      const src = v.src || v.currentSrc || '';
-      if (src.includes('&adformat=') || src.includes('&ad_type=') || src.includes('/ad/')) return true;
-    }
 
     return false;
   }
@@ -525,7 +510,7 @@
     };
     observePlayer();
 
-    // Polling fallback - check every 250ms for ad elements (faster detection)
+    // Polling fallback - check every 500ms for ad elements
     setInterval(() => {
       if (settings.adSkip === false) return;
 
@@ -550,30 +535,8 @@
 
       // Dismiss anti-adblock popups
       dismissAntiAdblock();
-    }, 250);
+    }, 500);
 
-    // Monitor video element for ad source changes
-    const watchVideo = () => {
-      const v = getVid();
-      if (!v) { setTimeout(watchVideo, 1000); return; }
-
-      // When video source changes, check if it's an ad
-      v.addEventListener('loadstart', () => {
-        if (settings.adSkip === false) return;
-        setTimeout(() => {
-          if (isAdPlaying()) handleVideoAd();
-        }, 50);
-      });
-
-      // When video starts playing, check if it's an ad
-      v.addEventListener('playing', () => {
-        if (settings.adSkip === false) return;
-        if (isAdPlaying()) handleVideoAd();
-      });
-
-      log('Video ad source monitor attached', '#5ac8fa');
-    };
-    watchVideo();
   }
 
   function dismissAntiAdblock() {
@@ -624,31 +587,28 @@
     log('Ad detected! Attempting to skip...', '#ff9f0a');
 
     // Mute immediately so user doesn't hear the ad
-    const wasMuted = v.muted;
     v.muted = true;
-
-    // Hide ad overlay containers immediately
-    document.querySelectorAll(
-      '.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, ' +
-      '.ytp-ad-overlay-container, .ytp-ad-image-overlay'
-    ).forEach(el => { el.style.display = 'none'; });
 
     // Try clicking skip button immediately
     if (tryClickSkip()) {
-      v.muted = wasMuted;
+      v.muted = false;
       adHandlerActive = false;
       return;
     }
 
-    // Keep trying every 100ms (faster than before)
+    // Keep trying every 200ms
     let attempts = 0;
     const skipInterval = setInterval(() => {
       attempts++;
 
-      if (!isAdPlaying()) {
+      // Re-check if ad is still playing (use player class — most reliable)
+      const player = getPlayer();
+      const stillAd = player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'));
+
+      if (!stillAd) {
         clearInterval(skipInterval);
         adHandlerActive = false;
-        v.muted = wasMuted;
+        v.muted = false;
         v.playbackRate = 1;
         log('Ad ended', '#30d158');
         return;
@@ -658,57 +618,42 @@
       if (tryClickSkip()) {
         clearInterval(skipInterval);
         adHandlerActive = false;
-        v.muted = wasMuted;
+        v.muted = false;
         v.playbackRate = 1;
         return;
       }
 
-      // Unskippable ad — force it to end:
+      // Only apply aggressive strategies to SHORT videos (ads are < 120s)
+      // This prevents accidentally skipping/speeding up real content
+      if (v.duration && isFinite(v.duration) && v.duration < 120) {
+        // Strategy 1: Seek near end of ad (not to exact end — that triggers next video)
+        if (v.duration > 0.5) {
+          v.currentTime = v.duration - 0.1;
+        }
 
-      // Strategy 1: Seek to end of ad
-      if (v.duration && isFinite(v.duration) && v.duration > 0.5) {
-        v.currentTime = v.duration;
+        // Strategy 2: Speed up playback
+        try { v.playbackRate = 16; } catch (e) {}
       }
 
-      // Strategy 2: Speed up playback
-      try { v.playbackRate = 16; } catch (e) {}
-
-      // Strategy 3: Dispatch ended event
-      if (v.duration > 0 && v.currentTime >= v.duration - 0.5) {
-        v.dispatchEvent(new Event('ended'));
-      }
-
-      // Strategy 4: Try YouTube's internal player API to skip ad
-      if (attempts === 3 || attempts === 10) {
+      // Strategy 3: Try YouTube's player API (safe — only works on actual ads)
+      if (attempts === 3 || attempts === 15) {
         try {
-          const player = getPlayer();
-          if (player) {
-            // YouTube exposes internal API on the player element
-            if (typeof player.skipAd === 'function') player.skipAd();
-            if (typeof player.cancelPlayback === 'function') player.cancelPlayback();
-            if (typeof player.finishAd === 'function') player.finishAd();
-            if (typeof player.getAdState === 'function') {
-              log('Player ad state: ' + player.getAdState(), '#ff9f0a');
-            }
+          if (player && typeof player.skipAd === 'function') {
+            player.skipAd();
+            log('Called player.skipAd()', '#30d158');
           }
         } catch (e) {}
       }
 
-      // Strategy 5: If ad is stuck, try removing the ad video source
-      if (attempts > 20 && attempts % 10 === 0) {
-        const adOverlay = document.querySelector('.ytp-ad-player-overlay');
-        if (adOverlay) adOverlay.remove();
-      }
-
-      // Safety: give up after 30s (300 attempts at 100ms)
-      if (attempts > 300) {
+      // Safety: give up after 30s (150 attempts at 200ms)
+      if (attempts > 150) {
         clearInterval(skipInterval);
         adHandlerActive = false;
-        v.muted = wasMuted;
+        v.muted = false;
         v.playbackRate = 1;
         log('Ad handler timeout — gave up', '#ff9f0a');
       }
-    }, 100);
+    }, 200);
   }
 
   function tryClickSkip() {
