@@ -50,12 +50,17 @@
   const SEGMENT_KEYWORDS = {
     intro: [
       'intro', 'introduction', 'opening segment',
-      'quick intro', 'opening', 'welcome segment'
+      'quick intro', 'opening', 'welcome segment',
+      'channel intro', 'video intro', 'the intro',
+      'start here', 'let\'s begin', 'getting started'
     ],
     outro: [
       'outro', 'ending', 'credits', 'closing',
       'wrap up', 'wrap-up', 'end screen', 'endscreen',
-      'final thoughts', 'end card', 'goodbye', 'bye bye'
+      'final thoughts', 'end card', 'goodbye', 'bye bye',
+      'thanks for watching', 'see you next', 'until next time',
+      'peace out', 'signing off', 'that\'s all', 'that\'s it',
+      'end of video', 'catch you later', 'next video'
     ],
     sponsor: [
       'sponsor', 'sponsored', 'advertisement', 'paid promotion',
@@ -63,20 +68,29 @@
       'collaboration', 'collab', 'in association with', 'partnered with',
       'gifted', 'pr package', 'pr unboxing', 'sent me',
       '#ad', '#sponsored', '#collab', '#partnership',
-      'brand deal', 'paid partnership', 'promoted', 'integrated ad'
+      'brand deal', 'paid partnership', 'promoted', 'integrated ad',
+      'sponsored by', 'brought to you by', 'sponsored segment',
+      'word from our sponsor', 'message from our sponsor',
+      'this video is sponsored', 'paid promo'
     ],
     selfpromo: [
       'merch', 'merchandise', 'self promo', 'self-promo', 'selfpromo',
-      'channel plug', 'shameless plug', 'my course', 'my podcast'
+      'channel plug', 'shameless plug', 'my course', 'my podcast',
+      'check out my', 'my website', 'my store', 'my shop',
+      'link in description', 'link in bio', 'my patreon',
+      'join my discord', 'my social media'
     ],
     interaction: [
       'subscribe', 'like button', 'notification bell', 'leave a comment',
       'hit the bell', 'smash the like', 'like and subscribe',
-      'comment below'
+      'comment below', 'drop a like', 'ring the bell',
+      'turn on notifications', 'click subscribe',
+      'like share subscribe', 'subscribe and like'
     ],
     preview: [
       'preview', 'recap', 'previously on', 'last time', 'quick recap',
-      'coming up'
+      'coming up', 'in this video', 'what we\'ll cover',
+      'table of contents', 'agenda', 'overview'
     ]
   };
 
@@ -797,7 +811,12 @@
         'ytd-macro-markers-list-item-renderer, ' +
         'ytd-chapter-renderer, ' +
         'ytd-engagement-panel-section-list-renderer[target-id*="chapters"] ytd-macro-markers-list-item-renderer, ' +
-        'ytd-engagement-panel-section-list-renderer[target-id*="macro-markers"] ytd-macro-markers-list-item-renderer'
+        'ytd-engagement-panel-section-list-renderer[target-id*="macro-markers"] ytd-macro-markers-list-item-renderer, ' +
+        // 2025-2026 YouTube selectors
+        'yt-decorated-chapter-renderer, ' +
+        'ytd-macro-markers-list-renderer ytd-macro-markers-list-item-renderer, ' +
+        '[target-id*="chapters"] [role="listitem"], ' +
+        'ytd-structured-description-content-renderer ytd-macro-markers-list-item-renderer'
       );
 
       // Also try parsing from ytInitialData JSON
@@ -831,8 +850,16 @@
       } else {
         // Parse from DOM
         chapterElements.forEach(el => {
-          const titleEl = el.querySelector('#details h4, #chapter-title, .macro-markers, .macro-markers-list-item-renderer h4');
-          const timeEl = el.querySelector('#time, .timestamp, #details .macro-markers-list-item-renderer-time, .macro-markers-list-item-renderer-time');
+          const titleEl = el.querySelector(
+            '#details h4, #chapter-title, .macro-markers, .macro-markers-list-item-renderer h4, ' +
+            'h4, [class*="chapter-title"], [class*="macro-markers"] h4, ' +
+            'yt-formatted-string[class*="title"], span[class*="title"]'
+          );
+          const timeEl = el.querySelector(
+            '#time, .timestamp, #details .macro-markers-list-item-renderer-time, ' +
+            '.macro-markers-list-item-renderer-time, ' +
+            '[class*="timestamp"], [class*="time-display"], span[class*="time"]'
+          );
 
           let title = '';
           if (titleEl) title = titleEl.textContent.trim();
@@ -907,7 +934,14 @@
         '#attributed-snippet-text, ' +
         'ytd-watch-metadata #description, ' +
         'ytd-watch-metadata yt-attributed-string, ' +
-        'yt-attributed-string.content'
+        'yt-attributed-string.content, ' +
+        // 2025-2026 YouTube selectors
+        'ytd-structured-description-content-renderer #description-content, ' +
+        '#description-inner, ' +
+        'ytd-video-description-infocards-section-renderer, ' +
+        '#description yt-attributed-string, ' +
+        '#description ytd-text-inline-expander, ' +
+        'ytd-watch-metadata yt-formatted-string[class*="description"]'
       );
 
       if (!descEl) {
@@ -932,10 +966,10 @@
 
       // Multiple timestamp formats:
       // "0:00 Intro", "2:30 - Sponsor", "(0:00) Intro", "[0:00] Intro",
-      // "0:00: Intro", "Intro - 0:00", "Intro 0:00"
-      const timestampFirstPattern = /(?:\(?[\[\(]?)(\d{1,2}:\d{2}(?::\d{2})?)[\]\)]?[:\s]*[-–—]?\s*(.+)/;
-      const labelFirstPattern = /^([A-Za-z][A-Za-z\s&/]+?)\s*[-–—]\s*(\d{1,2}:\d{2}(?::\d{2})?)/;
-      const labelFirstNoSepPattern = /^([A-Za-z][A-Za-z\s&/]{2,}?)\s+(\d{1,2}:\d{2}(?::\d{2})?)$/;
+      // "0:00: Intro", "Intro - 0:00", "Intro 0:00", "0:00 | Intro"
+      const timestampFirstPattern = /(?:[\[\(]?)(\d{1,2}:\d{2}(?::\d{2})?)[\]\)]?[:\s|]*[-–—|]?\s*(.+)/;
+      const labelFirstPattern = /^(.+?)\s*[-–—|:]\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*$/;
+      const labelFirstNoSepPattern = /^([^\d].{2,}?)\s+(\d{1,2}:\d{2}(?::\d{2})?)\s*$/;
       const entries = [];
 
       for (const line of lines) {
@@ -1294,9 +1328,9 @@
           for (const [category, keywords] of Object.entries(CAPTION_KEYWORDS)) {
             // Skip intro/outro detection for music videos
             if (musicVideo && (category === 'intro' || category === 'outro')) continue;
-            // Temporal filtering: intro only in first 15%, outro only in last 15%
-            if (category === 'intro' && videoDuration > 0 && cap.start > videoDuration * 0.15) continue;
-            if (category === 'outro' && videoDuration > 0 && cap.start < videoDuration * 0.85) continue;
+            // Temporal filtering: intro only in first 25%, outro only in last 25%
+            if (category === 'intro' && videoDuration > 0 && cap.start > videoDuration * 0.25) continue;
+            if (category === 'outro' && videoDuration > 0 && cap.start < videoDuration * 0.75) continue;
 
             for (const kw of keywords) {
               if (cap.text.includes(kw)) {
@@ -1379,12 +1413,19 @@
 
   function matchCategory(text) {
     if (!text) return null;
-    const lower = text.toLowerCase();
+    const lower = text.toLowerCase().trim();
 
-    // Pass 1: Existing keyword matching (unchanged)
+    // Pass 1: Keyword matching with word boundary checks
     for (const [category, keywords] of Object.entries(SEGMENT_KEYWORDS)) {
       for (const kw of keywords) {
-        if (lower.includes(kw)) return category;
+        // Multi-word keywords use includes (specific enough)
+        // Single-word keywords use word boundary regex to avoid partial matches
+        if (kw.includes(' ') || kw.startsWith('#')) {
+          if (lower.includes(kw)) return category;
+        } else {
+          const re = new RegExp(`\\b${escapeRegex(kw)}\\b`);
+          if (re.test(lower)) return category;
+        }
       }
     }
 
@@ -2278,6 +2319,7 @@
         return;
       }
 
+      let lastAutoResume = 0;
       v.addEventListener('pause', () => {
         if (!settings.continuousPlay) return;
         if (continuousUserPaused) return;
@@ -2286,15 +2328,22 @@
         if (v.ended || (v.duration && v.currentTime >= v.duration - 0.5)) return;
 
         // Don't resume if an ad is playing
-        if (isAdPlaying()) return;
+        const p = getPlayer();
+        if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return;
 
-        // Small delay to distinguish YouTube-initiated pauses from user actions
+        // Cooldown: don't auto-resume more than once every 3 seconds
+        // This prevents play/pause loops where YouTube and our code fight
+        const now = Date.now();
+        if (now - lastAutoResume < 3000) return;
+
+        // Longer delay to distinguish YouTube-initiated pauses from user actions
         setTimeout(() => {
           if (v.paused && !v.ended && !continuousUserPaused && settings.continuousPlay) {
+            lastAutoResume = Date.now();
             v.play().catch(() => {});
             log('Continuous play: resumed YouTube-paused video', '#30d158');
           }
-        }, 200);
+        }, 500);
       });
 
       v.addEventListener('play', () => {
