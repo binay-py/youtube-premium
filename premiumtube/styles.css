@@ -15,7 +15,23 @@ ytd-promoted-sparkles-web-renderer,
 .ytd-mealbar-promo-renderer,
 .ytp-ad-message-container,
 ytd-in-feed-ad-layout-renderer,
-#related ytd-promoted-video-renderer {
+#related ytd-promoted-video-renderer,
+.ytp-ad-image-overlay,
+.ytp-ad-survey,
+.ytp-ad-action-interstitial,
+ytd-display-ad-renderer,
+ytd-companion-slot-renderer,
+ytd-action-companion-ad-renderer,
+ytd-promoted-video-renderer,
+.ytd-merch-shelf-renderer,
+ytd-statement-banner-renderer,
+.ytd-brand-video-singleton-renderer,
+.ytp-ad-preview-container,
+.ytp-ad-badge,
+.ytp-ad-visit-advertiser-button,
+.ytp-ad-persistent-progress-bar-container,
+.ytp-ad-player-overlay-instream-info,
+ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
   display: none !important;
 }
 

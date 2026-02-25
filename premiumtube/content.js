@@ -418,10 +418,34 @@
   function isAdPlaying() {
     const player = getPlayer();
     if (!player) return false;
-    return player.classList.contains('ad-showing')
+
+    // Class-based detection (primary)
+    if (player.classList.contains('ad-showing')
       || player.classList.contains('ad-interrupting')
-      || !!document.querySelector('.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout')
-      || !!document.querySelector('.ytp-ad-action-interstitial');
+      || player.classList.contains('ad-created')) return true;
+
+    // DOM element detection
+    if (document.querySelector(
+      '.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, ' +
+      '.ytp-ad-action-interstitial, .ytp-ad-player-overlay-instream-info, ' +
+      '.ytp-ad-text, .ytp-ad-preview-container, .ytp-ad-badge, ' +
+      '.ytp-ad-visit-advertiser-button, .ad-showing, ' +
+      '.ytp-ad-skip-button-modern, .ytp-ad-button-text, ' +
+      'div.ytp-ad-persistent-progress-bar-container'
+    )) return true;
+
+    // Ad countdown text detection
+    const adText = document.querySelector('.ytp-ad-text');
+    if (adText && adText.textContent && adText.textContent.length > 0) return true;
+
+    // Video source detection - ad videos use different URL patterns
+    const v = getVid();
+    if (v && v.src) {
+      const src = v.src || v.currentSrc || '';
+      if (src.includes('&adformat=') || src.includes('&ad_type=') || src.includes('/ad/')) return true;
+    }
+
+    return false;
   }
 
   function setupAdBlocker() {
@@ -501,7 +525,7 @@
     };
     observePlayer();
 
-    // Polling fallback - check every 500ms for ad elements
+    // Polling fallback - check every 250ms for ad elements (faster detection)
     setInterval(() => {
       if (settings.adSkip === false) return;
 
@@ -509,12 +533,15 @@
         handleVideoAd();
       }
 
-      // Remove overlay ads
+      // Remove overlay ads aggressively
       document.querySelectorAll(
         '.ytp-ad-overlay-container, .ytp-ad-overlay-close-button, ' +
-        '.ytp-ad-text-overlay, .ytp-ad-image-overlay'
+        '.ytp-ad-text-overlay, .ytp-ad-image-overlay, .ytp-ad-survey'
       ).forEach(el => {
-        const closeBtn = el.querySelector('.ytp-ad-overlay-close-button, button[class*="close"]') || el;
+        const closeBtn = el.querySelector(
+          '.ytp-ad-overlay-close-button, button[class*="close"], ' +
+          '[aria-label="Close"], [aria-label="close"]'
+        ) || el;
         if (closeBtn && (closeBtn.tagName === 'BUTTON' || closeBtn.getAttribute('role') === 'button')) {
           closeBtn.click();
         }
@@ -523,33 +550,66 @@
 
       // Dismiss anti-adblock popups
       dismissAntiAdblock();
-    }, 500);
+    }, 250);
+
+    // Monitor video element for ad source changes
+    const watchVideo = () => {
+      const v = getVid();
+      if (!v) { setTimeout(watchVideo, 1000); return; }
+
+      // When video source changes, check if it's an ad
+      v.addEventListener('loadstart', () => {
+        if (settings.adSkip === false) return;
+        setTimeout(() => {
+          if (isAdPlaying()) handleVideoAd();
+        }, 50);
+      });
+
+      // When video starts playing, check if it's an ad
+      v.addEventListener('playing', () => {
+        if (settings.adSkip === false) return;
+        if (isAdPlaying()) handleVideoAd();
+      });
+
+      log('Video ad source monitor attached', '#5ac8fa');
+    };
+    watchVideo();
   }
 
   function dismissAntiAdblock() {
     // YouTube's "ad blockers are not allowed" popup
-    const enforcementDialog = document.querySelector(
-      'tp-yt-paper-dialog:has(ytd-enforcement-message-view-model), ' +
-      'ytd-popup-container tp-yt-paper-dialog:has([target-id="enforcement-message"])'
-    );
-    if (enforcementDialog) {
-      const dismissBtn = enforcementDialog.querySelector(
-        'button, .yt-spec-button-shape-next, [aria-label="Close"], #dismiss-button'
-      );
-      if (dismissBtn) {
-        dismissBtn.click();
-        log('Dismissed anti-adblock popup', '#ff9f0a');
+    const enforcementSelectors = [
+      'tp-yt-paper-dialog:has(ytd-enforcement-message-view-model)',
+      'ytd-popup-container tp-yt-paper-dialog:has([target-id="enforcement-message"])',
+      'ytd-popup-container tp-yt-paper-dialog:has(yt-ad-blocker-message-renderer)',
+      'tp-yt-paper-dialog:has(yt-playability-error-supported-renderers)',
+      '#dialog:has([class*="enforcement"])',
+      'ytd-popup-container tp-yt-paper-dialog:has(#dismiss-button)'
+    ];
+
+    for (const sel of enforcementSelectors) {
+      const dialog = document.querySelector(sel);
+      if (dialog) {
+        const dismissBtn = dialog.querySelector(
+          '#dismiss-button button, button, .yt-spec-button-shape-next, ' +
+          '[aria-label="Close"], [aria-label="Dismiss"], #dismiss-button'
+        );
+        if (dismissBtn) {
+          dismissBtn.click();
+          log('Dismissed anti-adblock popup: ' + sel, '#ff9f0a');
+        }
+        dialog.remove();
       }
-      enforcementDialog.remove();
     }
 
-    // Generic "allow ads" dialog
-    const allowAdsPopup = document.querySelector(
-      'ytd-popup-container tp-yt-paper-dialog:has(yt-ad-blocker-message-renderer)'
+    // Remove any blocking overlays that prevent video playback
+    const blockOverlay = document.querySelector(
+      '.ytd-enforcement-message-view-model, ' +
+      'yt-playability-error-supported-renderers'
     );
-    if (allowAdsPopup) {
-      allowAdsPopup.remove();
-      log('Removed ad-blocker message overlay', '#ff9f0a');
+    if (blockOverlay) {
+      blockOverlay.remove();
+      log('Removed ad-block enforcement overlay', '#ff9f0a');
     }
   }
 
@@ -564,16 +624,23 @@
     log('Ad detected! Attempting to skip...', '#ff9f0a');
 
     // Mute immediately so user doesn't hear the ad
+    const wasMuted = v.muted;
     v.muted = true;
+
+    // Hide ad overlay containers immediately
+    document.querySelectorAll(
+      '.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, ' +
+      '.ytp-ad-overlay-container, .ytp-ad-image-overlay'
+    ).forEach(el => { el.style.display = 'none'; });
 
     // Try clicking skip button immediately
     if (tryClickSkip()) {
-      v.muted = false;
+      v.muted = wasMuted;
       adHandlerActive = false;
       return;
     }
 
-    // Keep trying every 250ms
+    // Keep trying every 100ms (faster than before)
     let attempts = 0;
     const skipInterval = setInterval(() => {
       attempts++;
@@ -581,45 +648,67 @@
       if (!isAdPlaying()) {
         clearInterval(skipInterval);
         adHandlerActive = false;
-        // Restore normal playback
-        v.muted = false;
+        v.muted = wasMuted;
         v.playbackRate = 1;
         log('Ad ended', '#30d158');
         return;
       }
 
+      // Try clicking skip button every tick
       if (tryClickSkip()) {
         clearInterval(skipInterval);
         adHandlerActive = false;
-        v.muted = false;
+        v.muted = wasMuted;
         v.playbackRate = 1;
         return;
       }
 
-      // Unskippable ad — multiple strategies to force it to end:
-      // Strategy 1: Seek to end
+      // Unskippable ad — force it to end:
+
+      // Strategy 1: Seek to end of ad
       if (v.duration && isFinite(v.duration) && v.duration > 0.5) {
-        v.currentTime = v.duration - 0.1;
+        v.currentTime = v.duration;
       }
 
-      // Strategy 2: Speed up as much as YouTube allows
+      // Strategy 2: Speed up playback
       try { v.playbackRate = 16; } catch (e) {}
 
-      // Strategy 3: If ad is very short or seeked to end, try to
-      // dispatch an 'ended' event to force transition
-      if (v.currentTime >= v.duration - 0.5 && v.duration > 0) {
+      // Strategy 3: Dispatch ended event
+      if (v.duration > 0 && v.currentTime >= v.duration - 0.5) {
         v.dispatchEvent(new Event('ended'));
       }
 
-      // Safety: give up after 60s (240 attempts at 250ms)
-      if (attempts > 240) {
+      // Strategy 4: Try YouTube's internal player API to skip ad
+      if (attempts === 3 || attempts === 10) {
+        try {
+          const player = getPlayer();
+          if (player) {
+            // YouTube exposes internal API on the player element
+            if (typeof player.skipAd === 'function') player.skipAd();
+            if (typeof player.cancelPlayback === 'function') player.cancelPlayback();
+            if (typeof player.finishAd === 'function') player.finishAd();
+            if (typeof player.getAdState === 'function') {
+              log('Player ad state: ' + player.getAdState(), '#ff9f0a');
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Strategy 5: If ad is stuck, try removing the ad video source
+      if (attempts > 20 && attempts % 10 === 0) {
+        const adOverlay = document.querySelector('.ytp-ad-player-overlay');
+        if (adOverlay) adOverlay.remove();
+      }
+
+      // Safety: give up after 30s (300 attempts at 100ms)
+      if (attempts > 300) {
         clearInterval(skipInterval);
         adHandlerActive = false;
-        v.muted = false;
+        v.muted = wasMuted;
         v.playbackRate = 1;
         log('Ad handler timeout — gave up', '#ff9f0a');
       }
-    }, 250);
+    }, 100);
   }
 
   function tryClickSkip() {
@@ -635,35 +724,46 @@
       '.ytp-ad-skip-button-slot button',
       '.ytp-ad-skip-button-slot .ytp-ad-skip-button-modern',
       'button[class*="skip-button"]',
+      'button[class*="skip-ad"]',
       '.ytp-ad-player-overlay button[class*="skip"]',
       'button.ytp-ad-overlay-close-button',
       '.ytp-ad-action-interstitial-close-button',
-      // Newer YouTube ad skip patterns
       '.ytp-ad-skip-button-modern-with-label',
       'ytd-button-renderer#skip-button button',
       '.ytp-ad-button-icon',
-      'button[data-tooltip-target-id="skip-button"]'
+      'button[data-tooltip-target-id="skip-button"]',
+      // 2025-2026 YouTube ad skip patterns
+      '.ytp-ad-skip-button-slot',
+      '.ytp-skip-ad-button__text',
+      '.ytp-ad-skip-button-container',
+      'button[class*="ytp-ad-skip"]',
+      '.ytp-ad-module button',
+      '.ytp-ad-overlay-close-container button',
+      'yt-button-renderer[is-skip-ad-button] button',
+      '.ytp-ad-feedback-dialog-close-button'
     ];
 
     for (const sel of skipSelectors) {
-      const btn = document.querySelector(sel);
-      if (btn) {
-        // Click even if not "visible" — YouTube sometimes hides skip buttons
-        // behind overlays but they're still clickable
+      const els = document.querySelectorAll(sel);
+      for (const btn of els) {
         btn.click();
-        // Also try dispatching events directly
-        btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         log('Clicked skip button: ' + sel, '#30d158');
         return true;
       }
     }
 
-    // Also try finding skip text and clicking parent
-    const allButtons = document.querySelectorAll('.ytp-ad-player-overlay button, .ytp-ad-module button');
+    // Broad text-based search across all buttons in the player area
+    const allButtons = document.querySelectorAll(
+      '.ytp-ad-player-overlay button, .ytp-ad-module button, ' +
+      '.ytp-ad-overlay-container button, #movie_player button, ' +
+      '.html5-video-player button'
+    );
     for (const btn of allButtons) {
-      const txt = (btn.textContent || '').toLowerCase();
-      if (txt.includes('skip') || txt.includes('close')) {
+      const txt = (btn.textContent || btn.getAttribute('aria-label') || '').toLowerCase();
+      if (txt.includes('skip') || txt.includes('close ad') || txt.includes('skip ad')) {
         btn.click();
+        btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         log('Clicked skip via text match: "' + txt.trim() + '"', '#30d158');
         return true;
       }
