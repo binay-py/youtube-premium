@@ -39,7 +39,7 @@ ytd-in-feed-ad-layout-renderer,
 #pt-skip-button {
   position: absolute !important;
   bottom: 80px !important;
-  right: 16px !important;
+  right: 60px !important;
   z-index: 99 !important;
   cursor: pointer !important;
   user-select: none !important;
@@ -203,7 +203,7 @@ ytd-in-feed-ad-layout-renderer,
 #pt-upcoming-segment {
   position: absolute !important;
   bottom: 80px !important;
-  right: 16px !important;
+  right: 60px !important;
   z-index: 98 !important;
   cursor: default !important;
   user-select: none !important;
