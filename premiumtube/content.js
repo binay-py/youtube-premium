@@ -14,17 +14,19 @@
   let initTimer = null;
   let activeBtn = null;
   let activeSeg = null;
-  let posTimer = null;
   let keyHandler = null;
 
   // Upcoming segment preview state
   let upcomingBtn = null;
   let upcomingSeg = null;
-  let upcomingPosTimer = null;
 
   // Local detection state
   let localDetectionTimers = [];
   let endScreenDetected = false;
+
+  // Seekbar marker persistence state
+  let seekbarObserver = null;
+  let seekbarSafetyTimer = null;
 
   const LABELS = {
     intro: 'Intro', outro: 'Outro', sponsor: 'Sponsor',
@@ -191,6 +193,103 @@
     ]
   };
 
+  // ---- Music video detection ----
+  // Musical structure terms — if chapters contain these, it's a music track, not a talk/vlog
+  const MUSIC_CHAPTER_TERMS = [
+    'verse', 'chorus', 'bridge', 'hook', 'drop', 'refrain',
+    'pre-chorus', 'pre chorus', 'post-chorus', 'post chorus',
+    'interlude', 'breakdown', 'buildup', 'build-up', 'build up',
+    'solo', 'instrumental', 'coda', 'riff', 'beat switch',
+    'verse 1', 'verse 2', 'verse 3', 'chorus 1', 'chorus 2',
+    'stanza', 'hook 1', 'hook 2', 'drop 1', 'drop 2'
+  ];
+
+  // Cache per video ID so we don't re-detect every time
+  let musicVideoCache = {}; // { videoId: true/false }
+
+  function isMusicVideo() {
+    const id = currentVideoId;
+    if (!id) return false;
+    if (id in musicVideoCache) return musicVideoCache[id];
+
+    let isMusic = false;
+
+    // Method 1: Check video category from ytInitialPlayerResponse
+    try {
+      // Try global object first
+      let category = window.ytInitialPlayerResponse?.videoDetails?.category;
+
+      // Fallback: parse from script tags
+      if (!category) {
+        const scripts = document.querySelectorAll('script');
+        for (const script of scripts) {
+          const text = script.textContent;
+          if (!text.includes('ytInitialPlayerResponse')) continue;
+          const match = text.match(/ytInitialPlayerResponse\s*=\s*({.+?});/s);
+          if (!match) continue;
+          const data = JSON.parse(match[1]);
+          category = data?.videoDetails?.category;
+          break;
+        }
+      }
+
+      if (category && category.toLowerCase() === 'music') {
+        isMusic = true;
+        log('Music video detected (category: Music)', '#bf5af2');
+      }
+    } catch (e) { /* ignore parse errors */ }
+
+    // Method 2: Check if chapters contain music structure terms
+    if (!isMusic) {
+      isMusic = detectMusicFromChapterTitles();
+    }
+
+    musicVideoCache[id] = isMusic;
+    return isMusic;
+  }
+
+  function detectMusicFromChapterTitles() {
+    // Get chapter titles from DOM or ytInitialData
+    const titles = [];
+
+    // Try DOM
+    const chapterElements = document.querySelectorAll(
+      'ytd-macro-markers-list-item-renderer, ytd-chapter-renderer'
+    );
+    chapterElements.forEach(el => {
+      const titleEl = el.querySelector('#details h4, #chapter-title, .macro-markers');
+      if (titleEl) titles.push(stripEmojis(titleEl.textContent).toLowerCase().trim());
+    });
+
+    // Try ytInitialData if DOM is empty
+    if (!titles.length) {
+      const parsed = parseChaptersFromInitialData();
+      if (parsed) {
+        parsed.forEach(ch => titles.push(ch.title));
+      }
+    }
+
+    if (titles.length < 2) return false;
+
+    // Count how many chapter titles match music terms
+    let musicHits = 0;
+    for (const title of titles) {
+      for (const term of MUSIC_CHAPTER_TERMS) {
+        if (title === term || title.startsWith(term + ' ') || title.endsWith(' ' + term)) {
+          musicHits++;
+          break;
+        }
+      }
+    }
+
+    // If 2+ chapters are music structure terms, it's a music track
+    if (musicHits >= 2) {
+      log(`Music video detected (${musicHits}/${titles.length} chapters are music terms)`, '#bf5af2');
+      return true;
+    }
+    return false;
+  }
+
   // ==================== INIT ====================
 
   async function init() {
@@ -285,6 +384,7 @@
     cleanupLocalDetection();
     currentVideoId = id;
     skipSegments = [];
+    delete musicVideoCache[id]; // reset music detection for fresh check
 
     log(`Video: ${id}`, '#5ac8fa');
 
@@ -295,7 +395,8 @@
     detectFromChapters();
     detectFromDescription();
     detectFromCaptions();
-    // End screen detection runs during check() polling
+    detectEndScreenFromMetadata(); // early outro detection from YouTube metadata
+    // Live end screen detection still runs during check() polling as fallback
 
     // Fetch from SponsorBlock (with retry) — runs in parallel with local detection
     await fetchDirect(id);
@@ -676,11 +777,17 @@
       // Sort by start time
       chapters.sort((a, b) => a.start - b.start);
 
+      // Check if this is a music video (chapters like "Verse", "Chorus", etc.)
+      const musicVideo = isMusicVideo();
+
       const newSegments = [];
       for (let i = 0; i < chapters.length; i++) {
         const ch = chapters[i];
         const end = (i < chapters.length - 1) ? chapters[i + 1].start : v.duration;
         const category = matchCategory(ch.title);
+
+        // Skip intro/outro detection for music videos (those are musical terms, not video segments)
+        if (musicVideo && (category === 'intro' || category === 'outro')) continue;
 
         if (category && !hasOverlap(ch.start, end)) {
           newSegments.push({
@@ -694,7 +801,7 @@
 
       if (newSegments.length) {
         mergeSegments(newSegments);
-        log(`Chapters detection: found ${newSegments.length} segments`, '#5ac8fa');
+        log(`Chapters detection: found ${newSegments.length} segments` + (musicVideo ? ' (music video — intro/outro skipped)' : ''), '#5ac8fa');
         newSegments.forEach(s => {
           log(`  [chapters] ${s.category}: ${fmtTime(s.start)} -> ${fmtTime(s.end)}`, '#5ac8fa');
         });
@@ -806,11 +913,15 @@
       // Sort entries by start time
       entries.sort((a, b) => a.start - b.start);
 
+      const musicVideo = isMusicVideo();
       const newSegments = [];
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         const end = (i < entries.length - 1) ? entries[i + 1].start : v.duration;
         const category = matchCategory(entry.label);
+
+        // Skip intro/outro detection for music videos
+        if (musicVideo && (category === 'intro' || category === 'outro')) continue;
 
         if (category && !hasOverlap(entry.start, end)) {
           newSegments.push({
@@ -824,7 +935,7 @@
 
       if (newSegments.length) {
         mergeSegments(newSegments);
-        log(`Description detection: found ${newSegments.length} segments`, '#5ac8fa');
+        log(`Description detection: found ${newSegments.length} segments` + (musicVideo ? ' (music video — intro/outro skipped)' : ''), '#5ac8fa');
         newSegments.forEach(s => {
           log(`  [description] ${s.category}: ${fmtTime(s.start)} -> ${fmtTime(s.end)}`, '#5ac8fa');
         });
@@ -839,10 +950,118 @@
     localDetectionTimers.push(timerId);
   }
 
-  // --- Method 3: End Screen Detection ---
+  // --- Method 3a: Early End Screen Detection (from YouTube metadata) ---
+  // YouTube embeds endscreen timing in ytInitialPlayerResponse — available at page load.
+  // This lets us show the outro seekbar marker from the very start of the video.
+
+  function detectEndScreenFromMetadata() {
+    // Don't add outro segments for music videos
+    if (isMusicVideo()) return;
+
+    let attempts = 0;
+    const maxAttempts = 15; // 7.5s at 500ms intervals
+
+    const tryDetect = () => {
+      const v = getVid();
+      if (!v || !v.duration || v.duration === Infinity) {
+        if (++attempts < maxAttempts) {
+          const timerId = setTimeout(tryDetect, 500);
+          localDetectionTimers.push(timerId);
+        }
+        return;
+      }
+
+      let startMs = null;
+
+      // Method A: Global ytInitialPlayerResponse
+      try {
+        const results = window.ytInitialPlayerResponse
+          ?.playerOverlays?.playerOverlayRenderer
+          ?.endScreen?.watchNextEndScreenRenderer?.results;
+        if (results?.length) {
+          for (const r of results) {
+            const ms = r?.endScreenVideoRenderer?.startMs
+              || r?.endScreenPlaylistRenderer?.startMs
+              || r?.endScreenChannelRenderer?.startMs;
+            if (ms) {
+              const parsed = parseInt(ms, 10);
+              if (!isNaN(parsed) && (startMs === null || parsed < startMs)) {
+                startMs = parsed;
+              }
+            }
+          }
+        }
+      } catch (e) { /* ignore */ }
+
+      // Method B: Parse from script tags
+      if (startMs === null) {
+        try {
+          const scripts = document.querySelectorAll('script');
+          for (const script of scripts) {
+            const text = script.textContent;
+            if (!text.includes('ytInitialPlayerResponse')) continue;
+            const match = text.match(/ytInitialPlayerResponse\s*=\s*({.+?});/s);
+            if (!match) continue;
+            const data = JSON.parse(match[1]);
+            const results = data?.playerOverlays?.playerOverlayRenderer
+              ?.endScreen?.watchNextEndScreenRenderer?.results;
+            if (!results?.length) break;
+            for (const r of results) {
+              const ms = r?.endScreenVideoRenderer?.startMs
+                || r?.endScreenPlaylistRenderer?.startMs
+                || r?.endScreenChannelRenderer?.startMs;
+              if (ms) {
+                const parsed = parseInt(ms, 10);
+                if (!isNaN(parsed) && (startMs === null || parsed < startMs)) {
+                  startMs = parsed;
+                }
+              }
+            }
+            break;
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      if (startMs === null) {
+        log('End screen metadata: no endscreen data found', '#aaa');
+        return;
+      }
+
+      const outroStart = startMs / 1000; // convert ms to seconds
+      const outroEnd = v.duration;
+
+      // Sanity checks
+      if (outroStart >= outroEnd || outroStart < 0) return;
+      // Don't create extremely long outro segments (>25% of video)
+      if ((outroEnd - outroStart) > v.duration * 0.25) return;
+      // Already have an outro segment covering this time?
+      if (hasOverlap(outroStart, outroEnd)) return;
+
+      endScreenDetected = true;
+
+      const newSegments = [{
+        start: outroStart,
+        end: outroEnd,
+        category: 'outro',
+        source: 'endscreen-meta'
+      }];
+
+      mergeSegments(newSegments);
+      log(`End screen metadata: outro at ${fmtTime(outroStart)} -> ${fmtTime(outroEnd)} (marker visible from start)`, '#bf5af2');
+    };
+
+    const timerId = setTimeout(tryDetect, 1500);
+    localDetectionTimers.push(timerId);
+  }
+
+  // --- Method 3b: Live End Screen Detection (DOM fallback) ---
+  // Fallback for when metadata isn't available — detects visible endscreen elements.
 
   function detectEndScreen() {
     if (endScreenDetected) return;
+
+    // Don't add outro segments for music videos
+    if (isMusicVideo()) return;
 
     const v = getVid();
     if (!v || !v.duration || v.duration === Infinity) return;
@@ -992,9 +1211,12 @@
         // Scan captions using CAPTION_KEYWORDS (strict, multi-word only)
         const rawHits = []; // { start, end, category }
         const videoDuration = v.duration;
+        const musicVideo = isMusicVideo();
 
         for (const cap of captions) {
           for (const [category, keywords] of Object.entries(CAPTION_KEYWORDS)) {
+            // Skip intro/outro detection for music videos
+            if (musicVideo && (category === 'intro' || category === 'outro')) continue;
             // Temporal filtering: intro only in first 15%, outro only in last 15%
             if (category === 'intro' && videoDuration > 0 && cap.start > videoDuration * 0.15) continue;
             if (category === 'outro' && videoDuration > 0 && cap.start < videoDuration * 0.85) continue;
@@ -1367,14 +1589,10 @@
     };
     document.addEventListener('keydown', keyHandler);
 
-    document.body.appendChild(el);
+    // Append inside the player so it moves naturally with it (no scroll jitter)
+    const player = getPlayer();
+    (player || document.body).appendChild(el);
     activeBtn = el;
-
-    // Position over the player
-    posBtn();
-    posTimer = setInterval(posBtn, 150);
-    window.addEventListener('resize', posBtn);
-    document.addEventListener('fullscreenchange', posBtn);
 
     // Animate in
     requestAnimationFrame(() => el.classList.add('pt-visible'));
@@ -1396,20 +1614,6 @@
     requestAnimationFrame(tick);
 
     log(`BUTTON SHOWN: "Skip ${label}" [${seg.source || 'unknown'}]`, '#ff2d55');
-  }
-
-  function posBtn() {
-    if (!activeBtn) return;
-    const p = getPlayer();
-    if (!p) { activeBtn.style.opacity = '0'; return; }
-    const r = p.getBoundingClientRect();
-    const isFullscreen = !!document.fullscreenElement;
-    // YouTube controls bar is ~48px; place skip button well above it
-    const offset = isFullscreen ? 90 : 80;
-
-    activeBtn.style.position = 'fixed';
-    activeBtn.style.bottom = (window.innerHeight - r.bottom + offset) + 'px';
-    activeBtn.style.right = (window.innerWidth - r.right + 16) + 'px';
   }
 
   function doSkip(seg) {
@@ -1447,9 +1651,6 @@
   }
 
   function removeBtn() {
-    if (posTimer) { clearInterval(posTimer); posTimer = null; }
-    window.removeEventListener('resize', posBtn);
-    document.removeEventListener('fullscreenchange', posBtn);
     if (keyHandler) {
       document.removeEventListener('keydown', keyHandler);
       keyHandler = null;
@@ -1498,13 +1699,10 @@
       <span id="pt-upcoming-count">in ${delta}s</span>
     `;
 
-    document.body.appendChild(el);
+    // Append inside the player so it moves naturally with it (no scroll jitter)
+    const player = getPlayer();
+    (player || document.body).appendChild(el);
     upcomingBtn = el;
-
-    posUpcoming();
-    upcomingPosTimer = setInterval(posUpcoming, 150);
-    window.addEventListener('resize', posUpcoming);
-    document.addEventListener('fullscreenchange', posUpcoming);
 
     requestAnimationFrame(() => el.classList.add('pt-upcoming-visible'));
 
@@ -1525,9 +1723,6 @@
   }
 
   function removeUpcoming() {
-    if (upcomingPosTimer) { clearInterval(upcomingPosTimer); upcomingPosTimer = null; }
-    window.removeEventListener('resize', posUpcoming);
-    document.removeEventListener('fullscreenchange', posUpcoming);
     if (upcomingBtn) {
       upcomingBtn.classList.remove('pt-upcoming-visible');
       const fadingEl = upcomingBtn;
@@ -1540,20 +1735,68 @@
     });
   }
 
-  function posUpcoming() {
-    if (!upcomingBtn) return;
-    const p = getPlayer();
-    if (!p) { upcomingBtn.style.opacity = '0'; return; }
-    const r = p.getBoundingClientRect();
-    const isFullscreen = !!document.fullscreenElement;
-    const baseOffset = isFullscreen ? 90 : 80;
-    upcomingBtn.style.position = 'fixed';
-    // Sits at same spot as skip button (upcoming hides when skip shows)
-    upcomingBtn.style.bottom = (window.innerHeight - r.bottom + baseOffset) + 'px';
-    upcomingBtn.style.right = (window.innerWidth - r.right + 16) + 'px';
+  // ==================== SEEKBAR MARKERS ====================
+
+  function injectMarkerElements() {
+    const v = getVid();
+    if (!v || !v.duration || v.duration === Infinity || !skipSegments.length) return false;
+
+    const bar = document.querySelector('.ytp-progress-bar');
+    if (!bar) return false;
+
+    // Remove any existing markers first
+    bar.querySelectorAll('.pt-seekbar-marker').forEach(e => e.remove());
+
+    for (const seg of skipSegments) {
+      const markerKey = KEYS[seg.category];
+      if (markerKey && settings[markerKey] === false) continue;
+
+      const startPct = (seg.start / v.duration) * 100;
+      const widthPct = ((seg.end - seg.start) / v.duration) * 100;
+
+      const marker = document.createElement('div');
+      marker.className = 'pt-seekbar-marker';
+      marker.setAttribute('data-category', seg.category);
+      marker.style.left = startPct + '%';
+      marker.style.width = Math.max(0.3, widthPct) + '%';
+      marker.title = `${LABELS[seg.category]}: ${fmtTime(seg.start)} – ${fmtTime(seg.end)}`;
+
+      bar.appendChild(marker);
+    }
+    return true;
   }
 
-  // ==================== SEEKBAR MARKERS ====================
+  function startSeekbarObserver() {
+    stopSeekbarObserver();
+
+    // MutationObserver: watch the progress bar's parent for DOM changes
+    // YouTube re-renders the progress bar on fullscreen, resize, navigation, etc.
+    const barParent = document.querySelector('.ytp-progress-bar')?.parentElement
+      || document.querySelector('.ytp-chrome-bottom');
+    if (barParent) {
+      seekbarObserver = new MutationObserver(() => {
+        // Check if our markers were removed
+        if (skipSegments.length && !document.querySelector('.pt-seekbar-marker')) {
+          log('Seekbar markers lost — re-injecting', '#ff9f0a');
+          injectMarkerElements();
+        }
+      });
+      seekbarObserver.observe(barParent, { childList: true, subtree: true });
+    }
+
+    // Safety net: periodic check every 3 seconds
+    seekbarSafetyTimer = setInterval(() => {
+      if (skipSegments.length && !document.querySelector('.pt-seekbar-marker')) {
+        log('Seekbar markers missing (safety check) — re-injecting', '#ff9f0a');
+        injectMarkerElements();
+      }
+    }, 3000);
+  }
+
+  function stopSeekbarObserver() {
+    if (seekbarObserver) { seekbarObserver.disconnect(); seekbarObserver = null; }
+    if (seekbarSafetyTimer) { clearInterval(seekbarSafetyTimer); seekbarSafetyTimer = null; }
+  }
 
   function addSeekbarMarkers() {
     removeSeekbarMarkers();
@@ -1563,36 +1806,19 @@
 
     let attempts = 0;
     const tryAdd = () => {
-      const bar = document.querySelector('.ytp-progress-bar');
-      if (!bar || !v.duration || v.duration === Infinity) {
-        if (++attempts < 20) setTimeout(tryAdd, 500);
-        return;
+      if (injectMarkerElements()) {
+        startSeekbarObserver();
+        log(`Added ${skipSegments.length} seekbar markers`, '#5ac8fa');
+      } else if (++attempts < 20) {
+        setTimeout(tryAdd, 500);
       }
-
-      for (const seg of skipSegments) {
-        const markerKey = KEYS[seg.category];
-        if (markerKey && settings[markerKey] === false) continue;
-
-        const startPct = (seg.start / v.duration) * 100;
-        const widthPct = ((seg.end - seg.start) / v.duration) * 100;
-
-        const marker = document.createElement('div');
-        marker.className = 'pt-seekbar-marker';
-        marker.setAttribute('data-category', seg.category);
-        marker.style.left = startPct + '%';
-        marker.style.width = Math.max(0.3, widthPct) + '%';
-        marker.title = `${LABELS[seg.category]}: ${fmtTime(seg.start)} – ${fmtTime(seg.end)}`;
-
-        bar.appendChild(marker);
-      }
-
-      log(`Added ${skipSegments.length} seekbar markers`, '#5ac8fa');
     };
 
     tryAdd();
   }
 
   function removeSeekbarMarkers() {
+    stopSeekbarObserver();
     document.querySelectorAll('.pt-seekbar-marker').forEach(e => e.remove());
   }
 
