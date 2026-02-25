@@ -55,8 +55,7 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
 #pt-skip-button {
   position: absolute !important;
   bottom: 72px !important;
-  left: 12px !important;
-  right: auto !important;
+  right: 80px !important;
   z-index: 99 !important;
   cursor: pointer !important;
   user-select: none !important;
@@ -67,7 +66,7 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              left 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
   will-change: opacity, transform, bottom !important;
 }
 
@@ -75,13 +74,13 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
 :fullscreen #pt-skip-button,
 ::backdrop #pt-skip-button {
   bottom: 110px !important;
-  left: 24px !important;
+  right: 24px !important;
 }
 
 /* When YouTube hides controls (autohide), slide button down to bottom */
 #pt-skip-button.pt-controls-hidden {
   bottom: 16px !important;
-  left: 24px !important;
+  right: 24px !important;
 }
 
 #pt-skip-button.pt-visible {
@@ -96,7 +95,7 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
   transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
               bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              left 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* ---- Inner card ---- */
@@ -258,8 +257,7 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
 #pt-upcoming-segment {
   position: absolute !important;
   bottom: 72px !important;
-  left: 12px !important;
-  right: auto !important;
+  right: 80px !important;
   z-index: 98 !important;
   cursor: default !important;
   user-select: none !important;
@@ -281,7 +279,7 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              left 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
   will-change: opacity, transform, bottom !important;
 }
 
@@ -289,13 +287,13 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
 :fullscreen #pt-upcoming-segment,
 ::backdrop #pt-upcoming-segment {
   bottom: 110px !important;
-  left: 24px !important;
+  right: 24px !important;
 }
 
 /* When YouTube hides controls, slide down */
 #pt-upcoming-segment.pt-controls-hidden {
   bottom: 16px !important;
-  left: 24px !important;
+  right: 24px !important;
 }
 
 #pt-upcoming-segment.pt-upcoming-visible {
@@ -310,7 +308,7 @@ ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"] {
   transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
               bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              left 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .pt-upcoming-dot {
