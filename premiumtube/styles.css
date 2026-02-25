@@ -38,28 +38,48 @@ ytd-in-feed-ad-layout-renderer,
 
 #pt-skip-button {
   position: absolute !important;
-  bottom: 80px !important;
-  right: 60px !important;
+  bottom: 72px !important;
+  right: 12px !important;
   z-index: 99 !important;
   cursor: pointer !important;
   user-select: none !important;
   pointer-events: auto !important;
 
   opacity: 0 !important;
-  transform: translateY(6px) !important;
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out !important;
-  will-change: opacity, transform !important;
+  transform: translateY(10px) scale(0.97) !important;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  will-change: opacity, transform, bottom !important;
 }
 
-/* In fullscreen, controls are taller */
+/* In fullscreen, controls are taller — push button much higher */
 :fullscreen #pt-skip-button,
 ::backdrop #pt-skip-button {
-  bottom: 90px !important;
+  bottom: 110px !important;
+  right: 24px !important;
+}
+
+/* When YouTube hides controls (autohide), slide button down to bottom */
+#pt-skip-button.pt-controls-hidden {
+  bottom: 16px !important;
+  right: 12px !important;
 }
 
 #pt-skip-button.pt-visible {
   opacity: 1 !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Graceful exit — slides down slower with deceleration */
+#pt-skip-button.pt-exiting {
+  opacity: 0 !important;
+  transform: translateY(16px) scale(0.95) !important;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* ---- Inner card ---- */
@@ -78,18 +98,20 @@ ytd-in-feed-ad-layout-renderer,
   border: none !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
 
-  transition: background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease !important;
+  transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 #pt-skip-button:hover #pt-skip-inner {
   background: #fff !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
-  transform: translateY(-1px) !important;
+  transform: translateY(-2px) !important;
 }
 
 #pt-skip-button:active #pt-skip-inner {
-  transform: scale(0.97) !important;
-  transition-duration: 0.05s !important;
+  transform: scale(0.96) !important;
+  transition-duration: 0.08s !important;
 }
 
 /* ---- Category dot ---- */
@@ -99,6 +121,13 @@ ytd-in-feed-ad-layout-renderer,
   border-radius: 50% !important;
   background: var(--cat, #666) !important;
   flex-shrink: 0 !important;
+  box-shadow: 0 0 0 0 var(--cat, #666) !important;
+  animation: pt-dot-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+@keyframes pt-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat, #666) 25%, transparent); }
 }
 
 /* ---- Skip icon ---- */
@@ -132,6 +161,14 @@ ytd-in-feed-ad-layout-renderer,
   border-radius: 10px !important;
   min-width: 24px !important;
   text-align: center !important;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Fade out the time badge smoothly when segment is about to end */
+#pt-skip-time.pt-time-fading {
+  opacity: 0 !important;
+  transform: scale(0.85) !important;
 }
 
 /* ---- Keyboard shortcut hint ---- */
@@ -157,6 +194,7 @@ ytd-in-feed-ad-layout-renderer,
   border-radius: 0 0 22px 22px !important;
   pointer-events: none !important;
   opacity: 0.8 !important;
+  transition: width 0.15s linear !important;
 }
 
 /* =========================================================================
@@ -171,11 +209,11 @@ ytd-in-feed-ad-layout-renderer,
   border-radius: 1px !important;
   pointer-events: none !important;
   opacity: 0.5 !important;
-  transition: opacity 0.2s ease !important;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .ytp-progress-bar:hover .pt-seekbar-marker {
-  opacity: 0.85 !important;
+  opacity: 0.9 !important;
 }
 
 .pt-seekbar-marker[data-category="sponsor"]        { background: #ffaa33 !important; }
@@ -202,8 +240,8 @@ ytd-in-feed-ad-layout-renderer,
 
 #pt-upcoming-segment {
   position: absolute !important;
-  bottom: 80px !important;
-  right: 60px !important;
+  bottom: 72px !important;
+  right: 12px !important;
   z-index: 98 !important;
   cursor: default !important;
   user-select: none !important;
@@ -221,19 +259,40 @@ ytd-in-feed-ad-layout-renderer,
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 
   opacity: 0 !important;
-  transform: translateY(4px) !important;
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out !important;
-  will-change: opacity, transform !important;
+  transform: translateY(8px) scale(0.97) !important;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  will-change: opacity, transform, bottom !important;
 }
 
+/* In fullscreen, push higher to clear bigger controls */
 :fullscreen #pt-upcoming-segment,
 ::backdrop #pt-upcoming-segment {
-  bottom: 90px !important;
+  bottom: 110px !important;
+  right: 24px !important;
+}
+
+/* When YouTube hides controls, slide down */
+#pt-upcoming-segment.pt-controls-hidden {
+  bottom: 16px !important;
+  right: 12px !important;
 }
 
 #pt-upcoming-segment.pt-upcoming-visible {
   opacity: 1 !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Graceful exit for upcoming segment */
+#pt-upcoming-segment.pt-upcoming-exiting {
+  opacity: 0 !important;
+  transform: translateY(14px) scale(0.95) !important;
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              right 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .pt-upcoming-dot {
@@ -258,6 +317,7 @@ ytd-in-feed-ad-layout-renderer,
   font-weight: 400 !important;
   color: rgba(255, 255, 255, 0.5) !important;
   white-space: nowrap !important;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* =========================================================================
@@ -268,7 +328,7 @@ ytd-in-feed-ad-layout-renderer,
   position: fixed !important;
   bottom: 24px !important;
   left: 50% !important;
-  transform: translateX(-50%) translateY(8px) !important;
+  transform: translateX(-50%) translateY(12px) scale(0.96) !important;
   z-index: 2147483647 !important;
 
   display: flex !important;
@@ -288,7 +348,8 @@ ytd-in-feed-ad-layout-renderer,
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
 
   opacity: 0 !important;
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out !important;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 #premiumtube-toast::before {
@@ -301,10 +362,12 @@ ytd-in-feed-ad-layout-renderer,
 
 #premiumtube-toast.pt-toast-show {
   opacity: 1 !important;
-  transform: translateX(-50%) translateY(0) !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
 }
 
 #premiumtube-toast.pt-toast-hide {
   opacity: 0 !important;
-  transform: translateX(-50%) translateY(8px) !important;
+  transform: translateX(-50%) translateY(12px) scale(0.96) !important;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }

@@ -28,6 +28,9 @@
   let seekbarObserver = null;
   let seekbarSafetyTimer = null;
 
+  // Controls visibility observer (for sliding button when controls hide)
+  let controlsObserver = null;
+
   const LABELS = {
     intro: 'Intro', outro: 'Outro', sponsor: 'Sponsor',
     selfpromo: 'Self-promo', interaction: 'Reminder',
@@ -381,6 +384,7 @@
     removeBtn();
     removeUpcoming();
     removeSeekbarMarkers();
+    stopControlsObserver();
     cleanupLocalDetection();
     currentVideoId = id;
     skipSegments = [];
@@ -390,6 +394,7 @@
 
     // Start polling immediately so segments found by any method are caught
     startPoll();
+    startControlsObserver();
 
     // Start local detection immediately (don't wait for API)
     detectFromChapters();
@@ -1594,12 +1599,18 @@
     (player || document.body).appendChild(el);
     activeBtn = el;
 
+    // Sync controls-hidden state before animating in
+    if (player && player.classList.contains('ytp-autohide')) {
+      el.classList.add('pt-controls-hidden');
+    }
+
     // Animate in
     requestAnimationFrame(() => el.classList.add('pt-visible'));
 
     // Progress bar + live countdown
     const prog = el.querySelector('#pt-skip-progress');
     const timeEl = el.querySelector('#pt-skip-time');
+    let lastRem = -1;
     const tick = () => {
       if (!activeBtn || activeSeg !== seg) return;
       const vid = getVid();
@@ -1607,7 +1618,14 @@
         const pct = ((vid.currentTime - seg.start) / (seg.end - seg.start)) * 100;
         prog.style.width = Math.min(100, Math.max(0, pct)) + '%';
         const rem = Math.max(0, Math.round(seg.end - vid.currentTime));
-        timeEl.textContent = rem + 's';
+        if (rem !== lastRem) {
+          timeEl.textContent = rem + 's';
+          lastRem = rem;
+          // Fade the time badge when reaching 0
+          if (rem <= 0) {
+            timeEl.classList.add('pt-time-fading');
+          }
+        }
       }
       requestAnimationFrame(tick);
     };
@@ -1657,6 +1675,7 @@
     }
     if (activeBtn) {
       activeBtn.classList.remove('pt-visible');
+      activeBtn.classList.add('pt-exiting');
       const fadingEl = activeBtn;
       activeBtn = null;
       activeSeg = null;
@@ -1664,7 +1683,7 @@
       document.querySelectorAll('#pt-skip-button').forEach(e => {
         if (e !== fadingEl) e.remove();
       });
-      setTimeout(() => fadingEl.remove(), 300);
+      setTimeout(() => fadingEl.remove(), 550);
     } else {
       // No active button, just clean up any orphans
       document.querySelectorAll('#pt-skip-button').forEach(e => e.remove());
@@ -1704,6 +1723,11 @@
     (player || document.body).appendChild(el);
     upcomingBtn = el;
 
+    // Sync controls-hidden state before animating in
+    if (player && player.classList.contains('ytp-autohide')) {
+      el.classList.add('pt-controls-hidden');
+    }
+
     requestAnimationFrame(() => el.classList.add('pt-upcoming-visible'));
 
     // Live countdown
@@ -1725,10 +1749,11 @@
   function removeUpcoming() {
     if (upcomingBtn) {
       upcomingBtn.classList.remove('pt-upcoming-visible');
+      upcomingBtn.classList.add('pt-upcoming-exiting');
       const fadingEl = upcomingBtn;
       upcomingBtn = null;
       upcomingSeg = null;
-      setTimeout(() => fadingEl.remove(), 300);
+      setTimeout(() => fadingEl.remove(), 500);
     }
     document.querySelectorAll('#pt-upcoming-segment').forEach(e => {
       if (e !== upcomingBtn) e.remove();
@@ -1796,6 +1821,32 @@
   function stopSeekbarObserver() {
     if (seekbarObserver) { seekbarObserver.disconnect(); seekbarObserver = null; }
     if (seekbarSafetyTimer) { clearInterval(seekbarSafetyTimer); seekbarSafetyTimer = null; }
+  }
+
+  // ==================== CONTROLS VISIBILITY OBSERVER ====================
+  // Watches for YouTube's .ytp-autohide class to slide buttons down when controls fade out
+
+  function startControlsObserver() {
+    stopControlsObserver();
+    const player = getPlayer();
+    if (!player) return;
+
+    const sync = () => {
+      const hidden = player.classList.contains('ytp-autohide');
+      if (activeBtn) activeBtn.classList.toggle('pt-controls-hidden', hidden);
+      if (upcomingBtn) upcomingBtn.classList.toggle('pt-controls-hidden', hidden);
+    };
+
+    controlsObserver = new MutationObserver(sync);
+    controlsObserver.observe(player, { attributes: true, attributeFilter: ['class'] });
+
+    // Initial sync
+    sync();
+    log('Controls visibility observer started', '#5ac8fa');
+  }
+
+  function stopControlsObserver() {
+    if (controlsObserver) { controlsObserver.disconnect(); controlsObserver = null; }
   }
 
   function addSeekbarMarkers() {
