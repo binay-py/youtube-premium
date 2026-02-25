@@ -9,12 +9,28 @@
     "128": "icons/icon128.png"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "declarativeNetRequest"
   ],
   "host_permissions": [
     "*://*.youtube.com/*",
-    "*://sponsor.ajay.app/*"
+    "*://sponsor.ajay.app/*",
+    "*://*.googlevideo.com/*",
+    "*://*.doubleclick.net/*",
+    "*://*.googlesyndication.com/*",
+    "*://*.googleadservices.com/*",
+    "*://*.google-analytics.com/*",
+    "*://*.adsense.google.com/*"
   ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ad_rules",
+        "enabled": true,
+        "path": "ad_rules.json"
+      }
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },

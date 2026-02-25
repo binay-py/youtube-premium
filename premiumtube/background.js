@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = {
   skipMusicOfftopic: true,
   skipPreview: true,
   skipFiller: true,
+  adSkip: true,
   pipEnabled: true,
   pipAutoSwitch: true,
   backgroundPlay: true,
