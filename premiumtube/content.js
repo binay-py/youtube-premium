@@ -433,32 +433,9 @@
     const player = getPlayer();
     if (!player) return false;
 
-    // Class-based detection (most reliable — YouTube sets these on the player)
-    if (player.classList.contains('ad-showing')
-      || player.classList.contains('ad-interrupting')
-      || player.classList.contains('ad-created')) return true;
-
-    // Visible ad overlay / skip button detection
-    if (document.querySelector(
-      '.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, ' +
-      '.ytp-ad-action-interstitial, .ytp-ad-skip-button-modern, ' +
-      '.ytp-ad-skip-button-container, .ytp-ad-skip-button, ' +
-      '.ytp-skip-ad-button, .ytp-ad-preview-container, ' +
-      '.ytp-ad-player-overlay-instream-info'
-    )) return true;
-
-    // Ad text / countdown visible on screen
-    const adText = document.querySelector('.ytp-ad-text, .ytp-ad-preview-text');
-    if (adText && adText.offsetParent !== null && adText.textContent.trim().length > 0) return true;
-
-    // Ad progress bar visible (the yellow bar YouTube shows during ads)
-    const adProgress = document.querySelector('.ytp-ad-persistent-progress-bar-container');
-    if (adProgress && adProgress.offsetParent !== null) return true;
-
-    // Visit advertiser button visible (only appears during video ads)
-    if (document.querySelector('.ytp-ad-visit-advertiser-button, .ytp-ad-button-text')) return true;
-
-    return false;
+    // Only use the most reliable signals — player class set by YouTube
+    return player.classList.contains('ad-showing')
+      || player.classList.contains('ad-interrupting');
   }
 
   function setupAdBlocker() {
@@ -525,18 +502,6 @@
         subtree: false
       });
 
-      // Also watch for ad elements being inserted into the player DOM
-      const adDomObserver = new MutationObserver(() => {
-        if (settings.adSkip === false) return;
-        if (isAdPlaying()) {
-          handleVideoAd();
-        }
-      });
-      adDomObserver.observe(player, {
-        childList: true,
-        subtree: true
-      });
-
       // Also observe body for anti-adblock popups
       const bodyObserver = new MutationObserver(() => {
         if (settings.adSkip === false) return;
@@ -551,7 +516,7 @@
     };
     observePlayer();
 
-    // Polling fallback - check every 300ms for ad elements
+    // Polling fallback - check every 500ms for ad elements
     setInterval(() => {
       if (settings.adSkip === false) return;
 
@@ -576,7 +541,7 @@
 
       // Dismiss anti-adblock popups
       dismissAntiAdblock();
-    }, 300);
+    }, 500);
 
   }
 
