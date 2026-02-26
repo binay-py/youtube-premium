@@ -24,6 +24,9 @@
   let localDetectionTimers = [];
   let endScreenDetected = false;
 
+  // Race condition guard — increments on every video change
+  let videoGeneration = 0;
+
   // Seekbar marker persistence state
   let seekbarObserver = null;
   let seekbarSafetyTimer = null;
@@ -33,8 +36,8 @@
 
   const LABELS = {
     intro: 'Intro', outro: 'Outro', sponsor: 'Sponsor',
-    selfpromo: 'Self-promo', interaction: 'Reminder',
-    music_offtopic: 'Non-music', preview: 'Preview', filler: 'Filler'
+    selfpromo: 'Promo', interaction: 'Reminder',
+    music_offtopic: 'Off-topic', preview: 'Preview', filler: 'Filler'
   };
 
   const KEYS = {
@@ -49,18 +52,19 @@
 
   const SEGMENT_KEYWORDS = {
     intro: [
-      'intro', 'introduction', 'opening segment',
-      'quick intro', 'opening', 'welcome segment',
-      'channel intro', 'video intro', 'the intro',
-      'start here', 'let\'s begin', 'getting started'
+      'intro', 'introduction',
+      'quick intro', 'channel intro', 'video intro', 'the intro',
+      'opening segment', 'opening intro',
+      // Hindi/Hinglish
+      'parichay', 'shuruat', 'shuruaat', 'bhoomika'
     ],
     outro: [
-      'outro', 'ending', 'credits', 'closing',
-      'wrap up', 'wrap-up', 'end screen', 'endscreen',
-      'final thoughts', 'end card', 'goodbye', 'bye bye',
-      'thanks for watching', 'see you next', 'until next time',
-      'peace out', 'signing off', 'that\'s all', 'that\'s it',
-      'end of video', 'catch you later', 'next video'
+      'outro', 'end screen', 'endscreen',
+      'wrap up', 'wrap-up', 'end card',
+      'final thoughts', 'thanks for watching', 'see you next',
+      'until next time', 'signing off', 'end of video',
+      // Hindi/Hinglish
+      'alvida', 'aakhri baatein', 'samapan'
     ],
     sponsor: [
       'sponsor', 'sponsored', 'advertisement', 'paid promotion',
@@ -71,70 +75,103 @@
       'brand deal', 'paid partnership', 'promoted', 'integrated ad',
       'sponsored by', 'brought to you by', 'sponsored segment',
       'word from our sponsor', 'message from our sponsor',
-      'this video is sponsored', 'paid promo'
+      'this video is sponsored', 'paid promo',
+      // Hindi/Hinglish
+      'praayojak', 'praayojit', 'vigyaapan',
+      'is video ke sponsor', 'aaj ka sponsor'
     ],
     selfpromo: [
       'merch', 'merchandise', 'self promo', 'self-promo', 'selfpromo',
       'channel plug', 'shameless plug', 'my course', 'my podcast',
       'check out my', 'my website', 'my store', 'my shop',
       'link in description', 'link in bio', 'my patreon',
-      'join my discord', 'my social media'
+      'join my discord', 'my social media',
+      // Hindi/Hinglish
+      'mera course', 'meri website', 'description mein link'
     ],
     interaction: [
       'subscribe', 'like button', 'notification bell', 'leave a comment',
       'hit the bell', 'smash the like', 'like and subscribe',
       'comment below', 'drop a like', 'ring the bell',
       'turn on notifications', 'click subscribe',
-      'like share subscribe', 'subscribe and like'
+      'like share subscribe', 'subscribe and like',
+      // Hindi/Hinglish
+      'subscribe karo', 'like karo', 'bell icon daba do',
+      'comment karo', 'share karo'
     ],
     preview: [
       'preview', 'recap', 'previously on', 'last time', 'quick recap',
       'coming up', 'in this video', 'what we\'ll cover',
-      'table of contents', 'agenda', 'overview'
+      'table of contents', 'agenda', 'overview',
+      // Hindi/Hinglish
+      'is video mein', 'aaj hum dekhenge'
     ]
   };
 
   // Known sponsor brands — used by matchCategory() pattern matching and caption scanning
   const SPONSOR_BRANDS = [
-    // Indian brands
+    // Indian brands — e-commerce & fashion
     'flipkart', 'myntra', 'meesho', 'ajio', 'nykaa', 'mamaearth', 'wow skin science',
-    'boat', 'noise', 'fire-boltt', 'realme', 'oneplus', 'samsung india',
-    'cred', 'groww', 'zerodha', 'upstox', 'coin dcx', 'coinswitch',
-    'unacademy', 'byju', "byjus", 'physicswallah', 'vedantu', 'toppr',
-    'lenskart', 'sugar cosmetics', 'plum goodness', 'mivi', 'portronics',
-    'swiggy', 'zomato', 'blinkit', 'zepto', 'dunzo',
-    'phonepe', 'paytm', 'google pay', 'amazon pay',
-    'cult.fit', 'healthifyme', 'beardo', 'man matters',
-    'urban company', 'pharmeasy', 'netmeds', '1mg',
+    'tata cliq', 'jiomart', 'firstcry', 'purplle', 'snitch', 'bonkers corner',
     'wrogn', 'bewakoof', 'souled store', 'the man company',
-    'pepperfry', 'urban ladder', 'wakefit',
-    'khatabook', 'open', 'razorpay',
+    // Indian brands — tech & gadgets
+    'boat', 'noise', 'fire-boltt', 'realme', 'oneplus', 'samsung india',
+    'mivi', 'portronics', 'boult audio', 'crossbeats', 'ambrane',
+    'nothing india', 'iqoo', 'poco', 'redmi',
+    // Indian brands — fintech & payments
+    'cred', 'groww', 'zerodha', 'upstox', 'coin dcx', 'coinswitch',
+    'phonepe', 'paytm', 'google pay', 'amazon pay',
+    'khatabook', 'open', 'razorpay', 'fi money', 'jupiter',
+    'smallcase', 'kuvera', 'angel one', 'dhan',
+    // Indian brands — education
+    'unacademy', 'byju', "byjus", 'physicswallah', 'vedantu', 'toppr',
+    'allen', 'apna college', 'coding ninjas', 'scaler', 'newton school',
+    'great learning', 'simplilearn', 'upgrad',
+    // Indian brands — lifestyle & food
+    'lenskart', 'sugar cosmetics', 'plum goodness',
+    'swiggy', 'zomato', 'blinkit', 'zepto', 'dunzo', 'bigbasket',
+    'cult.fit', 'healthifyme', 'beardo', 'man matters',
+    'urban company', 'pharmeasy', 'netmeds', '1mg', 'tata 1mg',
+    // Indian brands — home & furniture
+    'pepperfry', 'urban ladder', 'wakefit', 'sleepyhead',
+    // Indian brands — entertainment & gaming
+    'jiocinema', 'hotstar', 'zee5', 'sonyliv', 'voot', 'mxplayer',
+    'dream11', 'mpl', 'winzo', 'my11circle', 'getmega',
     'shaadi.com', 'matrimony.com',
-    'jiocinema', 'hotstar', 'zee5', 'sonyliv', 'voot',
-    'dream11', 'mpl', 'winzo', 'my11circle',
-    // Global / Western brands
-    'nordvpn', 'surfshark', 'expressvpn', 'private internet access',
-    'squarespace', 'skillshare', 'audible', 'brilliant', 'curiositystream',
-    'nebula', 'wondrium', 'coursera',
+    // Indian brands — travel
+    'makemytrip', 'goibibo', 'ixigo', 'cleartrip', 'yatra',
+    // Global — VPN & security
+    'nordvpn', 'surfshark', 'expressvpn', 'private internet access', 'proton vpn',
+    'incogni', 'dashlane', 'lastpass', '1password', 'bitwarden',
+    // Global — web & hosting
+    'squarespace', 'hostinger', 'bluehost', 'namecheap',
+    'shopify', 'wix', 'notion', 'webflow',
+    // Global — learning
+    'skillshare', 'audible', 'brilliant', 'curiositystream',
+    'nebula', 'wondrium', 'coursera', 'masterclass', 'linkedin learning',
+    // Global — gaming
     'raid shadow legends', 'genshin impact', 'rise of kingdoms',
+    'state of survival', 'afk arena', 'mobile legends', 'lords mobile',
+    // Global — grooming & health
     'manscaped', 'dollar shave club', 'dr squatch',
-    'betterhelp', 'headspace', 'calm',
+    'betterhelp', 'headspace', 'calm', 'noom',
+    // Global — food & drink
     'hellofresh', 'hello fresh', 'factor meals', 'athletic greens',
-    'magic spoon', 'ag1',
-    'ridge wallet', 'raycon', 'casetify', 'dbrand',
-    'established titles', 'incogni', 'dashlane', 'lastpass', '1password',
-    'opera gx', 'brave browser',
-    'bespoke post', 'sheath underwear',
-    'hostinger', 'bluehost', 'namecheap',
-    'shopify', 'wix', 'notion',
-    'grammarly', 'canva',
-    'ground news', 'morning brew', 'the daily wire',
-    'funcky', 'backbone one', 'analogue',
-    'keeps', 'hims', 'roman',
+    'magic spoon', 'ag1', 'liquid iv', 'mudwater',
+    // Global — tech & accessories
+    'ridge wallet', 'raycon', 'casetify', 'dbrand', 'anker',
+    'opera gx', 'brave browser', 'arc browser',
+    'backbone one', 'analogue',
+    // Global — productivity & tools
+    'grammarly', 'canva', 'aura', 'delete me',
+    'ground news', 'morning brew',
+    // Global — finance & shopping
     'honey', 'rakuten', 'capital one shopping',
-    'trade coffee', 'masterclass',
+    'trade coffee', 'bespoke post',
     'seatgeek', 'stubhub',
     'stamps.com', 'shipstation',
+    'keeps', 'hims', 'roman',
+    'established titles', 'funcky',
   ];
 
   // Stricter keywords for caption/transcript scanning — only multi-word phrases
@@ -150,11 +187,16 @@
       "what's up guys", "what's going on guys", 'hey everyone welcome',
       'hey guys welcome', 'hi guys welcome', 'hello friends',
       'good morning everyone', "what's up everyone",
+      "let's get started", 'welcome back everybody', 'welcome back everyone',
+      'so today we', 'alright so today',
       // Hindi/Hinglish
       'namaste doston', 'namaskar doston', 'namaskar dosto',
       'toh chaliye shuru karte', 'chaliye shuru karte hain',
       'swagat hai aapka', 'aaj hum baat karenge',
-      'toh aaj ki video mein', 'hello doston', 'hello dosto'
+      'toh aaj ki video mein', 'hello doston', 'hello dosto',
+      'aaj ke is video mein', 'sabse pehle',
+      'kaise hain aap sab', 'kaise ho dosto',
+      'aaj ka topic hai', 'aaj ka vishay hai'
     ],
     outro: [
       'thanks for watching', 'thank you for watching', 'see you next time',
@@ -169,10 +211,14 @@
       // More English
       'bye bye guys', 'take care guys', 'take care everyone',
       'see you guys in the next', 'peace out everyone',
+      'until next time guys', 'i will see you', 'we will see you',
+      'with that said', "that's all i have", 'thanks for sticking around',
       // Hindi/Hinglish
       'milte hain next video', 'aur milte hain', 'milte hain agle video mein',
       'toh milte hain', 'alvida doston', 'bye bye doston',
-      'apna khayal rakhna', 'video ko like karna mat bhoolna'
+      'apna khayal rakhna', 'video ko like karna mat bhoolna',
+      'subscribe zaroor karna', 'agle video mein milte hain',
+      'jai hind doston', 'dhanyavaad doston'
     ],
     sponsor: [
       'this video is sponsored', 'this video is brought to you',
@@ -187,8 +233,17 @@
       // More CTAs
       'click the link', 'limited time offer', 'percent off', 'check them out',
       'use the link below', 'huge discount', 'exclusive deal',
-      // Auto-include all sponsor brands
-      ...SPONSOR_BRANDS
+      'go to the link', 'get started for free', 'download for free',
+      'get it for free', 'money back guarantee', 'try it for free',
+      'percent off with', 'off using my code', 'off using my link',
+      'they sent me', 'they were kind enough', 'huge thanks to',
+      'massive thanks to', 'big thanks to',
+      // Hindi/Hinglish sponsor phrases
+      'is video ka sponsor hai', 'aaj ka sponsor hai',
+      'ye video sponsored hai', 'link description mein hai',
+      'code use karo', 'link use karo', 'discount milega',
+      'pehle 100 logo ko', 'free mein try karo',
+      'inhone ye bheja hai', 'inhone sponsor kiya hai'
     ],
     selfpromo: [
       'check out my', 'my other channel', 'second channel',
@@ -197,7 +252,10 @@
       'check out my merch', 'my merch store', 'buy me a coffee',
       'follow me on', 'sign up for my', 'my online course',
       'listen to my podcast',
-      'my website', 'my store', 'my app'
+      'my website', 'my store', 'my app',
+      // Hindi/Hinglish
+      'mera channel subscribe karo', 'doosra channel bhi dekho',
+      'meri website pe jao', 'merch kharidna mat bhoolna'
     ],
     interaction: [
       'smash that like', 'hit the like', 'drop a like', 'leave a like',
@@ -205,8 +263,12 @@
       'hit the notification', 'ring the notification', 'turn on notifications',
       'comment down below', 'leave a comment below', 'let me know in the comments',
       'share this video', 'share with your friends',
-      'like share subscribe', 'like subscribe', 'subscribe karo',
-      'like karo', 'bell icon daba do'
+      'like share subscribe', 'like subscribe',
+      // Hindi/Hinglish
+      'subscribe karo', 'like karo', 'bell icon daba do',
+      'comment karo', 'share karo neeche', 'notification on karo',
+      'like kar do', 'subscribe kar lo', 'bell icon dabao',
+      'comment mein batao'
     ]
   };
 
@@ -404,6 +466,8 @@
     skipSegments = [];
     delete musicVideoCache[id]; // reset music detection for fresh check
 
+    const gen = ++videoGeneration; // race condition guard
+
     log(`Video: ${id}`, '#5ac8fa');
 
     // Start polling immediately so segments found by any method are caught
@@ -411,15 +475,16 @@
     startControlsObserver();
 
     // Start local detection immediately (don't wait for API)
-    detectFromChapters();
-    detectFromDescription();
-    detectFromCaptions();
-    detectEndScreenFromMetadata(); // early outro detection from YouTube metadata
+    detectFromChapters(gen);
+    detectFromDescription(gen);
+    detectFromCaptions(gen);
+    detectEndScreenFromMetadata(gen);
     // Live end screen detection still runs during check() polling as fallback
 
     // Fetch from SponsorBlock (with retry) — runs in parallel with local detection
-    await fetchDirect(id);
+    await fetchDirect(id, gen);
 
+    if (gen !== videoGeneration) return; // stale — user navigated away
     if (skipSegments.length) addSeekbarMarkers();
     applyMaxQuality();
   }
@@ -766,11 +831,12 @@
     return null;
   }
 
-  function detectFromChapters() {
+  function detectFromChapters(gen) {
     let attempts = 0;
     const maxAttempts = 30; // 15s at 500ms intervals
 
     const tryDetect = () => {
+      if (gen !== videoGeneration) return; // stale
       // Try DOM selectors (expanded for current YouTube layout)
       const chapterElements = document.querySelectorAll(
         'ytd-macro-markers-list-item-renderer, ' +
@@ -853,10 +919,21 @@
       for (let i = 0; i < chapters.length; i++) {
         const ch = chapters[i];
         const end = (i < chapters.length - 1) ? chapters[i + 1].start : v.duration;
+        const segDuration = end - ch.start;
         const category = matchCategory(ch.title);
 
         // Skip intro/outro detection for music videos (those are musical terms, not video segments)
         if (musicVideo && (category === 'intro' || category === 'outro')) continue;
+
+        // Positional check: intro only in first 15%, outro only in last 30%
+        if (category === 'intro' && ch.start > v.duration * 0.15) continue;
+        if (category === 'outro' && ch.start < v.duration * 0.70) continue;
+
+        // Sanity: skip segments that are too long relative to video duration
+        // Intro/outro > 20% of video, others > 30% — almost certainly false positives
+        if (category === 'intro' || category === 'outro') {
+          if (segDuration > v.duration * 0.20) continue;
+        } else if (segDuration > v.duration * 0.30) continue;
 
         if (category && !hasOverlap(ch.start, end)) {
           newSegments.push({
@@ -883,11 +960,12 @@
 
   // --- Method 2: Description Timestamp Scanning ---
 
-  function detectFromDescription() {
+  function detectFromDescription(gen) {
     let attempts = 0;
     const maxAttempts = 30; // 15s at 500ms intervals
 
     const tryDetect = () => {
+      if (gen !== videoGeneration) return; // stale
       const descEl = document.querySelector(
         'ytd-text-inline-expander #snippet-text, ' +
         'ytd-text-inline-expander .content, ' +
@@ -977,10 +1055,17 @@
       // Scan for sponsor indicators in description text
       const lowerText = text.toLowerCase();
       const sponsorIndicators = [
-        '#ad', 'sponsored by', 'paid promotion', 'paid partnership',
+        '#ad', '#sponsored', '#collab', '#partnership',
+        'sponsored by', 'paid promotion', 'paid partnership',
         'this video is sponsored', 'brought to you by', 'thanks to our sponsor',
         'includes paid promotion', 'use code', 'use my code',
-        'promo code', 'discount code', 'coupon code'
+        'promo code', 'discount code', 'coupon code',
+        'affiliate link', 'referral link', 'commission',
+        'special thanks to', 'in partnership with', 'in collaboration with',
+        'brand collaboration', 'gifted by', 'sent for review',
+        // Hindi/Hinglish
+        'is video ka sponsor', 'ye video sponsored hai',
+        'link description mein', 'code use karo'
       ];
       const hasSponsorIndicator = sponsorIndicators.some(ind => lowerText.includes(ind));
 
@@ -994,10 +1079,20 @@
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         const end = (i < entries.length - 1) ? entries[i + 1].start : v.duration;
+        const segDuration = end - entry.start;
         const category = matchCategory(entry.label);
 
         // Skip intro/outro detection for music videos
         if (musicVideo && (category === 'intro' || category === 'outro')) continue;
+
+        // Positional check: intro only in first 15%, outro only in last 30%
+        if (category === 'intro' && entry.start > v.duration * 0.15) continue;
+        if (category === 'outro' && entry.start < v.duration * 0.70) continue;
+
+        // Sanity: skip segments that are too long relative to video duration
+        if (category === 'intro' || category === 'outro') {
+          if (segDuration > v.duration * 0.20) continue;
+        } else if (segDuration > v.duration * 0.30) continue;
 
         if (category && !hasOverlap(entry.start, end)) {
           newSegments.push({
@@ -1030,7 +1125,7 @@
   // YouTube embeds endscreen timing in ytInitialPlayerResponse — available at page load.
   // This lets us show the outro seekbar marker from the very start of the video.
 
-  function detectEndScreenFromMetadata() {
+  function detectEndScreenFromMetadata(gen) {
     // Don't add outro segments for music videos
     if (isMusicVideo()) return;
 
@@ -1038,6 +1133,7 @@
     const maxAttempts = 15; // 7.5s at 500ms intervals
 
     const tryDetect = () => {
+      if (gen !== videoGeneration) return; // stale
       const v = getVid();
       if (!v || !v.duration || v.duration === Infinity) {
         if (++attempts < maxAttempts) {
@@ -1187,19 +1283,23 @@
 
   let captionRetries = 0;
 
-  function detectFromCaptions() {
+  function detectFromCaptions(gen) {
     const tryDetect = async () => {
+      if (gen !== videoGeneration) return; // stale
       const v = getVid();
       if (!v || !v.duration) {
         if (++captionRetries < 6) {
-          const timerId = setTimeout(() => detectFromCaptions(), 3000);
+          const timerId = setTimeout(() => detectFromCaptions(gen), 3000);
           localDetectionTimers.push(timerId);
         }
         return;
       }
 
       try {
-        let captionUrl = null;
+        let captionUrls = []; // try multiple tracks for multilingual support
+
+        // Collect all available caption tracks
+        let allTracks = [];
 
         // Method A: Try YouTube's internal player API (most reliable)
         const player = document.querySelector('#movie_player');
@@ -1207,16 +1307,13 @@
           try {
             const trackList = player.getOption('captions', 'tracklist');
             if (trackList && trackList.length) {
-              const enTrack = trackList.find(t =>
-                t.languageCode === 'en' || t.languageCode?.startsWith('en')
-              ) || trackList[0];
-              if (enTrack?.baseUrl) captionUrl = enTrack.baseUrl;
+              allTracks = trackList.filter(t => t.baseUrl);
             }
           } catch (e) { /* player API not available yet */ }
         }
 
         // Method B: Parse from ytInitialPlayerResponse in page source
-        if (!captionUrl) {
+        if (!allTracks.length) {
           const scripts = document.querySelectorAll('script');
           for (const script of scripts) {
             const text = script.textContent;
@@ -1225,62 +1322,63 @@
             if (!match) continue;
             const playerData = JSON.parse(match[1]);
             const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-            if (!tracks || !tracks.length) break;
-
-            const enTrack = tracks.find(t =>
-              t.languageCode === 'en' || t.languageCode?.startsWith('en')
-            ) || tracks[0];
-
-            if (enTrack?.baseUrl) captionUrl = enTrack.baseUrl;
+            if (tracks && tracks.length) allTracks = tracks.filter(t => t.baseUrl);
             break;
           }
         }
 
         // Method C: Try the global ytInitialPlayerResponse object
-        if (!captionUrl && window.ytInitialPlayerResponse) {
+        if (!allTracks.length && window.ytInitialPlayerResponse) {
           try {
             const tracks = window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-            if (tracks && tracks.length) {
-              const enTrack = tracks.find(t =>
-                t.languageCode === 'en' || t.languageCode?.startsWith('en')
-              ) || tracks[0];
-              if (enTrack?.baseUrl) captionUrl = enTrack.baseUrl;
-            }
+            if (tracks && tracks.length) allTracks = tracks.filter(t => t.baseUrl);
           } catch (e) { /* not available */ }
         }
 
-        if (!captionUrl) {
+        if (!allTracks.length) {
           log('Captions detection: no caption track found', '#aaa');
           return;
         }
 
-        // Fetch the timedtext XML
-        const res = await fetch(captionUrl);
-        if (!res.ok) {
-          log('Captions detection: fetch failed ' + res.status, '#ff9f0a');
-          return;
+        // Prioritize: English first, then Hindi, then others
+        const prioritized = [
+          ...allTracks.filter(t => t.languageCode === 'en' || t.languageCode?.startsWith('en')),
+          ...allTracks.filter(t => t.languageCode === 'hi' || t.languageCode?.startsWith('hi')),
+          ...allTracks.filter(t => !t.languageCode?.startsWith('en') && !t.languageCode?.startsWith('hi'))
+        ];
+        // Deduplicate by baseUrl
+        const seen = new Set();
+        for (const t of prioritized) {
+          if (!seen.has(t.baseUrl)) { seen.add(t.baseUrl); captionUrls.push(t.baseUrl); }
         }
+        // Limit to 3 tracks max to avoid excessive fetching
+        captionUrls = captionUrls.slice(0, 3);
 
-        const xmlText = await res.text();
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        const textElements = xmlDoc.querySelectorAll('text');
-
-        if (!textElements.length) {
-          log('Captions detection: no text elements in captions', '#aaa');
-          return;
-        }
-
-        // Build caption entries with timestamps
+        // Fetch and merge captions from all tracks
         const captions = [];
-        textElements.forEach(el => {
-          const start = parseFloat(el.getAttribute('start'));
-          const dur = parseFloat(el.getAttribute('dur') || '0');
-          const content = (el.textContent || '').replace(/&#?\w+;/g, ' ').toLowerCase();
-          if (!isNaN(start) && content.trim()) {
-            captions.push({ start, dur, end: start + dur, text: content });
+        for (const url of captionUrls) {
+          if (gen !== videoGeneration) return; // stale
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const xmlText = await res.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            const textElements = xmlDoc.querySelectorAll('text');
+            textElements.forEach(el => {
+              const start = parseFloat(el.getAttribute('start'));
+              const dur = parseFloat(el.getAttribute('dur') || '0');
+              const content = (el.textContent || '').replace(/&#?\w+;/g, ' ').toLowerCase();
+              if (!isNaN(start) && content.trim()) {
+                captions.push({ start, dur, end: start + dur, text: content });
+              }
+            });
+          } catch (e) {
+            log('Captions detection: track fetch failed: ' + e.message, '#ff9f0a');
           }
-        });
+        }
+
+        if (gen !== videoGeneration) return; // stale
 
         if (!captions.length) return;
 
@@ -1291,11 +1389,10 @@
 
         for (const cap of captions) {
           for (const [category, keywords] of Object.entries(CAPTION_KEYWORDS)) {
+            // Skip intro/outro from captions — too noisy, only trust explicit timestamps/chapters
+            if (category === 'intro' || category === 'outro') continue;
             // Skip intro/outro detection for music videos
             if (musicVideo && (category === 'intro' || category === 'outro')) continue;
-            // Temporal filtering: intro only in first 25%, outro only in last 25%
-            if (category === 'intro' && videoDuration > 0 && cap.start > videoDuration * 0.25) continue;
-            if (category === 'outro' && videoDuration > 0 && cap.start < videoDuration * 0.75) continue;
 
             for (const kw of keywords) {
               if (cap.text.includes(kw)) {
@@ -1405,11 +1502,18 @@
 
     if (!matchedBrand) return null;
 
-    // Filter out editorial/review content — these are NOT sponsors
+    // Filter out editorial/review/build content — these are NOT sponsors
     const brandSafePatterns = [
       'review', 'vs', 'versus', 'comparison', 'top 10', 'top 5', 'top 20',
       'tier list', 'ranking', 'rated', 'honest opinion', 'is it worth',
-      'should you buy', 'alternatives', 'problems with'
+      'should you buy', 'alternatives', 'problems with',
+      // Tech/build/shopping context — editorial, not sponsorship
+      'build', 'building', 'built', 'install', 'installing', 'setup', 'setting up',
+      'shopping', 'bought', 'buying', 'testing', 'tested', 'using',
+      'upgrade', 'upgrading', 'benchmark', 'benchmarking', 'performance',
+      'hands on', 'hands-on', 'first look', 'overview', 'tutorial',
+      'how to', 'guide', 'explained', 'explained', 'deep dive',
+      'teardown', 'repair', 'fixing', 'modding', 'customiz'
     ];
     for (const safe of brandSafePatterns) {
       if (lower.includes(safe)) return null;
@@ -1419,14 +1523,12 @@
 
     // Structural patterns that strongly indicate sponsorship
     const sponsorPatterns = [
-      new RegExp(`\\b\\w+\\s+with\\s+${esc}\\b`),         // "[word] with [brand]"
+      new RegExp(`\\b(sponsored|partnered)\\s+with\\s+${esc}\\b`),      // "sponsored/partnered with [brand]"
       new RegExp(`\\bft\\.?\\s*${esc}\\b`),                // "ft. [brand]"
       new RegExp(`\\bfeat\\.?\\s*${esc}\\b`),              // "feat. [brand]"
       new RegExp(`\\bfeaturing\\s+${esc}\\b`),             // "featuring [brand]"
-      new RegExp(`\\b${esc}\\s+(special|segment|deal|zone|edition)\\b`), // "[brand] special/segment/..."
+      new RegExp(`\\b${esc}\\s+(special|segment|deal|zone)\\b`), // "[brand] special/segment/..."
       new RegExp(`\\b(powered|presented|brought)\\s+by\\s+${esc}\\b`),  // "powered/presented by [brand]"
-      new RegExp(`\\bunboxing\\s+${esc}\\b`),              // "unboxing [brand]"
-      new RegExp(`\\b${esc}\\s+unboxing\\b`),              // "[brand] unboxing"
     ];
 
     for (const pat of sponsorPatterns) {
@@ -1439,19 +1541,34 @@
     return null;
   }
 
-  function hasOverlap(start, end) {
-    const OVERLAP_THRESHOLD = 3; // seconds of overlap tolerance
+  function hasOverlap(start, end, category) {
     for (const seg of skipSegments) {
+      // Same category — only one intro/outro/etc. allowed, block if ANY time overlap
+      if (category && seg.category === category) {
+        const overlapStart = Math.max(start, seg.start);
+        const overlapEnd = Math.min(end, seg.end);
+        if (overlapEnd > overlapStart) return true;
+        // Also block same-category segments that are very close (within 10s gap)
+        if (Math.abs(start - seg.end) < 10 || Math.abs(seg.start - end) < 10) return true;
+      }
+      // Different category — use normal overlap threshold
       const overlapStart = Math.max(start, seg.start);
       const overlapEnd = Math.min(end, seg.end);
-      if (overlapEnd - overlapStart > OVERLAP_THRESHOLD) return true;
+      if (overlapEnd - overlapStart > 3) return true;
     }
     return false;
   }
 
+  // Only one intro and one outro allowed across all sources
+  function hasCategoryAlready(category) {
+    if (category !== 'intro' && category !== 'outro') return false;
+    return skipSegments.some(s => s.category === category);
+  }
+
   function mergeSegments(newSegments) {
     for (const seg of newSegments) {
-      if (!hasOverlap(seg.start, seg.end)) {
+      if (hasCategoryAlready(seg.category)) continue;
+      if (!hasOverlap(seg.start, seg.end, seg.category)) {
         skipSegments.push(seg);
       }
     }
@@ -1472,14 +1589,22 @@
 
   // ==================== FETCH SEGMENTS DIRECTLY ====================
 
-  async function fetchDirect(videoId) {
+  async function fetchDirect(videoId, gen) {
     const url = `${API}?videoID=${videoId}&categories=${encodeURIComponent(CATEGORIES)}`;
     log('Fetching: ' + url);
 
-    // Try direct fetch with one retry
-    for (let attempt = 0; attempt < 2; attempt++) {
+    // Fetch with timeout helper
+    const fetchWithTimeout = (u, ms = 5000) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      return fetch(u, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    };
+
+    // Try direct fetch with retry + exponential backoff
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (gen !== videoGeneration) return; // stale
       try {
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url, 5000);
         log(`API response: ${res.status} (attempt ${attempt + 1})`);
 
         if (res.status === 404) {
@@ -1487,16 +1612,24 @@
           return; // no segments — local detection will still run
         }
 
+        // Don't retry on server errors (5xx) — won't help
+        if (res.status >= 500) {
+          log(`SponsorBlock server error (${res.status}), skipping`, '#ff9f0a');
+          return;
+        }
+
         if (!res.ok) {
-          if (attempt === 0) {
-            log(`API returned ${res.status}, retrying in 2s...`, '#ff9f0a');
-            await new Promise(r => setTimeout(r, 2000));
-            continue; // retry
+          if (attempt < 2) {
+            const delay = 1000 * (attempt + 1); // 1s, 2s backoff
+            log(`API returned ${res.status}, retrying in ${delay / 1000}s...`, '#ff9f0a');
+            await new Promise(r => setTimeout(r, delay));
+            continue;
           }
           throw new Error(`API error: ${res.status}`);
         }
 
         const data = await res.json();
+        if (gen !== videoGeneration) return; // stale
         const sbSegments = data.map(d => ({
           start: d.segment[0],
           end: d.segment[1],
@@ -1504,9 +1637,8 @@
           source: 'sponsorblock'
         }));
 
-        // Merge SponsorBlock segments (they have priority — added first)
-        skipSegments.push(...sbSegments);
-        skipSegments.sort((a, b) => a.start - b.start);
+        // Merge SponsorBlock segments (they have priority — dedup with existing)
+        mergeSegments(sbSegments);
 
         log(`SponsorBlock: loaded ${sbSegments.length} segments`, '#30d158');
         sbSegments.forEach(s => {
@@ -1515,12 +1647,13 @@
         return; // success
 
       } catch (err) {
-        if (attempt === 0) {
-          log('Fetch failed: ' + err.message + ', retrying...', '#ff9f0a');
-          await new Promise(r => setTimeout(r, 2000));
+        if (attempt < 2) {
+          const delay = 1000 * (attempt + 1);
+          log('Fetch failed: ' + err.message + `, retrying in ${delay / 1000}s...`, '#ff9f0a');
+          await new Promise(r => setTimeout(r, delay));
           continue;
         }
-        log('Fetch failed after retry: ' + err.message, 'red');
+        log('Fetch failed after retries: ' + err.message, 'red');
       }
     }
 
@@ -1530,8 +1663,7 @@
       const resp = await chrome.runtime.sendMessage({ type: 'FETCH_SEGMENTS', videoId });
       if (resp?.success && resp.segments?.length) {
         const bgSegments = resp.segments.map(s => ({ ...s, source: 'sponsorblock' }));
-        skipSegments.push(...bgSegments);
-        skipSegments.sort((a, b) => a.start - b.start);
+        mergeSegments(bgSegments);
         log(`Background fallback: loaded ${bgSegments.length} segments`, '#30d158');
       } else {
         log('Background fallback: no segments');
@@ -1594,7 +1726,7 @@
     for (const seg of skipSegments) {
       const settingKey = KEYS[seg.category];
       if (settingKey && settings[settingKey] === false) continue;
-      if (t >= seg.start - 0.2 && t < seg.end - 0.1) {
+      if (t >= seg.start - 0.3 && t < seg.end - 0.05) {
         hit = seg;
         break;
       }
@@ -1634,6 +1766,18 @@
     }
   }
 
+  // Category-specific SVG icons (24x24 viewBox)
+  const CATEGORY_ICONS = {
+    intro:          '<path d="M8 5v14l11-7z"/>',                                           // play
+    outro:          '<path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>',                             // skip previous (reversed = end)
+    sponsor:        '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>', // dollar sign
+    selfpromo:      '<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>',  // tag
+    interaction:    '<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>',  // bell
+    music_offtopic: '<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>',  // music note
+    preview:        '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>',  // eye
+    filler:         '<path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zM19 3l-6 6 2 2 7-7V3h-3z"/>',  // cut
+  };
+
   // ==================== SKIP BUTTON ====================
 
   function showBtn(seg) {
@@ -1644,17 +1788,16 @@
     const label = LABELS[seg.category] || seg.category;
     const v = getVid();
     const remaining = v ? Math.max(0, Math.round(seg.end - v.currentTime)) : Math.round(seg.end - seg.start);
+    const iconPath = CATEGORY_ICONS[seg.category] || CATEGORY_ICONS.sponsor;
 
     const el = document.createElement('div');
     el.id = 'pt-skip-button';
     el.setAttribute('data-category', seg.category);
     el.innerHTML = `
       <div id="pt-skip-inner">
-        <span id="pt-skip-dot"></span>
-        <svg id="pt-skip-icon" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-        <span id="pt-skip-title">Skip ${label}</span>
+        <svg id="pt-skip-icon" viewBox="0 0 24 24">${iconPath}</svg>
+        <span id="pt-skip-title">${label}</span>
         <span id="pt-skip-time">${remaining}s</span>
-        <span id="pt-skip-kbd">↵</span>
         <div id="pt-skip-progress"></div>
       </div>
     `;
@@ -1709,7 +1852,7 @@
     };
     requestAnimationFrame(tick);
 
-    log(`BUTTON SHOWN: "Skip ${label}" [${seg.source || 'unknown'}]`, '#ff2d55');
+    log(`BUTTON SHOWN: "${label}" [${seg.source || 'unknown'}]`, '#ff2d55');
   }
 
   function doSkip(seg) {
@@ -1722,28 +1865,6 @@
     v.currentTime = seg.end;
     removeBtn();
     trackStat(saved);
-    showToast(`Skipped ${label}` + (saved > 0 ? ` \u00b7 saved ${saved}s` : ''));
-  }
-
-  // ---- Toast notification ----
-  let toastTimer = null;
-  function showToast(msg) {
-    let el = document.getElementById('premiumtube-toast');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'premiumtube-toast';
-      document.body.appendChild(el);
-    }
-    clearTimeout(toastTimer);
-    el.textContent = msg;
-    el.className = '';
-    // Trigger reflow so transition replays
-    void el.offsetWidth;
-    el.classList.add('pt-toast-show');
-    toastTimer = setTimeout(() => {
-      el.classList.remove('pt-toast-show');
-      el.classList.add('pt-toast-hide');
-    }, 2500);
   }
 
   function removeBtn() {
