@@ -300,3 +300,100 @@ yt-player-quick-action-buttons {
   white-space: nowrap !important;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+/* =========================================================================
+   SPEED INDICATOR OVERLAY (Keyboard Shortcuts)
+   ========================================================================= */
+
+#pt-speed-indicator {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(0.9) !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  color: #fff !important;
+  font-family: 'Roboto', 'Arial', sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  padding: 10px 22px !important;
+  border-radius: 10px !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+#pt-speed-indicator.pt-speed-visible {
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) scale(1) !important;
+}
+
+/* =========================================================================
+   VIDEO STATS OVERLAY
+   ========================================================================= */
+
+#pt-stats-overlay {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  z-index: 96 !important;
+  pointer-events: none !important;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  padding: 10px 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  white-space: pre !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  opacity: 0 !important;
+  transform: translateY(-4px) !important;
+  transition: opacity 0.25s ease, transform 0.25s ease !important;
+}
+
+#pt-stats-overlay.pt-stats-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* =========================================================================
+   CINEMATIC MODE (Ambient Lighting)
+   ========================================================================= */
+
+#pt-ambient-glow {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  border-radius: 12px !important;
+  transition: box-shadow 0.35s ease, opacity 0.5s ease !important;
+}
+
+/* Theater mode — no rounded corners */
+ytd-watch-flexy[theater] #pt-ambient-glow {
+  border-radius: 0 !important;
+}
+
+/* Fullscreen — no rounded corners */
+:fullscreen #pt-ambient-glow,
+::backdrop #pt-ambient-glow {
+  border-radius: 0 !important;
+}
+
+/* =========================================================================
+   WEBGL VIDEO SHARPENING
+   ========================================================================= */
+
+/* Sharpening now uses CSS/SVG filters — no canvas needed */
+
+

@@ -7,7 +7,6 @@
   <style>
     :root {
       --bg: #08080c;
-      --bg2: #0c0c12;
       --surface: #121218;
       --surface2: #1a1a22;
       --surface3: #222230;
@@ -17,14 +16,11 @@
       --text3: #58586e;
       --red: #ff2d55;
       --red2: #cc2244;
-      --red-soft: rgba(255, 45, 85, 0.08);
-      --red-glow: rgba(255, 45, 85, 0.2);
       --blue: #5ac8fa;
-      --blue-soft: rgba(90, 200, 250, 0.06);
       --green: #30d158;
-      --green-soft: rgba(48, 209, 88, 0.06);
       --purple: #bf5af2;
-      --purple-soft: rgba(191, 90, 242, 0.06);
+      --orange: #ff9f0a;
+      --cyan: #64d2ff;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -92,17 +88,7 @@
       -webkit-text-fill-color: transparent;
     }
 
-    .topbar-text p {
-      font-size: 11px;
-      color: var(--text3);
-      font-weight: 500;
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .topbar-text p { font-size: 11px; color: var(--text3); font-weight: 500; }
 
     .version-tag {
       font-size: 10px;
@@ -140,9 +126,7 @@
     .stat-card::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       height: 2px;
     }
 
@@ -186,12 +170,26 @@
       padding: 24px 32px 90px;
     }
 
+    /* ===== 2-COLUMN GRID ===== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-2 .card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 680px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
     /* ===== CARD ===== */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
-      margin-bottom: 16px;
       overflow: hidden;
       transition: border-color 0.2s;
     }
@@ -202,15 +200,32 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 22px;
+      padding: 14px 20px;
       border-bottom: 1px solid var(--border);
     }
 
     .card-head h2 {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: -0.2px;
+      letter-spacing: -0.1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+
+    .card-head h2 .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-red { background: var(--red); box-shadow: 0 0 8px rgba(255,45,85,0.5); }
+    .dot-blue { background: var(--blue); box-shadow: 0 0 8px rgba(90,200,250,0.5); }
+    .dot-orange { background: var(--orange); box-shadow: 0 0 8px rgba(255,159,10,0.5); }
+    .dot-green { background: var(--green); box-shadow: 0 0 8px rgba(48,209,88,0.5); }
+    .dot-purple { background: var(--purple); box-shadow: 0 0 8px rgba(191,90,242,0.5); }
+    .dot-cyan { background: var(--cyan); box-shadow: 0 0 8px rgba(100,210,255,0.5); }
 
     .tag {
       font-size: 9px;
@@ -227,62 +242,82 @@
     .row {
       display: flex;
       align-items: center;
-      padding: 13px 22px;
-      gap: 14px;
+      padding: 11px 20px;
+      gap: 12px;
       border-bottom: 1px solid rgba(255,255,255,0.03);
       transition: background 0.15s;
     }
 
     .row:last-child { border-bottom: none; }
     .row:hover { background: rgba(255,255,255,0.02); }
-    .row:hover .ic-red { box-shadow: 0 0 20px rgba(255,45,85,0.25); }
-    .row:hover .ic-blue { box-shadow: 0 0 20px rgba(90,200,250,0.25); }
 
     .row-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
 
-    .row-icon svg { width: 18px; height: 18px; }
+    .row-icon svg { width: 16px; height: 16px; }
 
-    .ic-red {
-      background: #2a1219;
-      border: 1px solid #3d1a24;
-      box-shadow: 0 0 14px rgba(255, 45, 85, 0.15);
-    }
-    .ic-red svg { fill: #f87171; filter: drop-shadow(0 0 4px rgba(248,113,113,0.4)); }
+    .ic-red { background: #2a1219; border: 1px solid #3d1a24; }
+    .ic-red svg { fill: #f87171; filter: drop-shadow(0 0 3px rgba(248,113,113,0.3)); }
+    .row:hover .ic-red { box-shadow: 0 0 16px rgba(255,45,85,0.2); }
 
-    .ic-blue {
-      background: #111d38;
-      border: 1px solid #17264a;
-      box-shadow: 0 0 14px rgba(90, 200, 250, 0.15);
-    }
-    .ic-blue svg { fill: #6fd4ff; filter: drop-shadow(0 0 4px rgba(96,165,250,0.4)); }
+    .ic-blue { background: #111d38; border: 1px solid #17264a; }
+    .ic-blue svg { fill: #6fd4ff; filter: drop-shadow(0 0 3px rgba(96,165,250,0.3)); }
+    .row:hover .ic-blue { box-shadow: 0 0 16px rgba(90,200,250,0.2); }
+
+    .ic-orange { background: #2a1f0e; border: 1px solid #3d2e14; }
+    .ic-orange svg { fill: #fbbf24; filter: drop-shadow(0 0 3px rgba(251,191,36,0.3)); }
+    .row:hover .ic-orange { box-shadow: 0 0 16px rgba(255,159,10,0.2); }
+
+    .ic-green { background: #0e2a18; border: 1px solid #143d20; }
+    .ic-green svg { fill: #4ade80; filter: drop-shadow(0 0 3px rgba(74,222,128,0.3)); }
+    .row:hover .ic-green { box-shadow: 0 0 16px rgba(48,209,88,0.2); }
+
+    .ic-purple { background: #231433; border: 1px solid #331d4a; }
+    .ic-purple svg { fill: #c084fc; filter: drop-shadow(0 0 3px rgba(192,132,252,0.3)); }
+    .row:hover .ic-purple { box-shadow: 0 0 16px rgba(191,90,242,0.2); }
+
+    .ic-cyan { background: #0e2230; border: 1px solid #143346; }
+    .ic-cyan svg { fill: #67e8f9; filter: drop-shadow(0 0 3px rgba(103,232,249,0.3)); }
+    .row:hover .ic-cyan { box-shadow: 0 0 16px rgba(100,210,255,0.2); }
 
     .row-info { flex: 1; min-width: 0; }
+    .row-info h3 { font-size: 13px; font-weight: 600; letter-spacing: -0.1px; }
+    .row-info p { font-size: 11px; color: var(--text3); margin-top: 1px; }
 
-    .row-info h3 {
-      font-size: 13.5px;
-      font-weight: 600;
-      letter-spacing: -0.1px;
+    /* ===== COMPACT ROW (skip segments) ===== */
+    .row-sm {
+      padding: 7px 20px;
+      gap: 10px;
     }
 
-    .row-info p {
-      font-size: 11.5px;
-      color: var(--text3);
-      margin-top: 2px;
+    .row-sm .row-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
     }
+
+    .row-sm .row-icon svg { width: 13px; height: 13px; }
+
+    .row-sm .row-info h3 { font-size: 12.5px; }
+    .row-sm .row-info p { display: none; }
+
+    .row-sm .toggle { width: 38px; height: 21px; }
+    .row-sm .toggle .track { border-radius: 11px; }
+    .row-sm .toggle .track::after { width: 15px; height: 15px; }
+    .row-sm .toggle input:checked + .track::after { transform: translateX(17px); }
 
     /* ===== TOGGLE ===== */
     .toggle {
       position: relative;
-      width: 44px;
-      height: 26px;
+      width: 42px;
+      height: 24px;
       flex-shrink: 0;
     }
 
@@ -292,7 +327,7 @@
       position: absolute;
       inset: 0;
       background: var(--surface3);
-      border-radius: 13px;
+      border-radius: 12px;
       cursor: pointer;
       transition: background 0.25s;
     }
@@ -300,10 +335,8 @@
     .track::after {
       content: '';
       position: absolute;
-      left: 3px;
-      top: 3px;
-      width: 20px;
-      height: 20px;
+      left: 3px; top: 3px;
+      width: 18px; height: 18px;
       background: var(--text3);
       border-radius: 50%;
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
@@ -312,7 +345,7 @@
 
     .toggle input:checked + .track {
       background: linear-gradient(135deg, #ef4444, #dc2626);
-      box-shadow: 0 0 16px rgba(239,68,68,0.45);
+      box-shadow: 0 0 14px rgba(239,68,68,0.4);
     }
 
     .toggle input:checked + .track::after {
@@ -320,17 +353,32 @@
       background: #fff;
     }
 
-    .toggle input:disabled + .track {
-      opacity: 0.25;
-      cursor: not-allowed;
+    /* ===== SLIDER ROW ===== */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      padding: 11px 20px;
+      gap: 12px;
+    }
+
+    .slider-row input[type="range"] {
+      width: 90px;
+      accent-color: #ef4444;
+      flex-shrink: 0;
+    }
+
+    .slider-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      min-width: 20px;
+      text-align: center;
     }
 
     /* ===== STATUSBAR ===== */
     .statusbar {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       background: rgba(8, 8, 12, 0.85);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -352,11 +400,7 @@
 
     .status-msg.show { opacity: 1; }
 
-    .status-links {
-      display: flex;
-      gap: 20px;
-    }
-
+    .status-links { display: flex; gap: 20px; }
     .status-links a {
       font-size: 11px;
       color: var(--text3);
@@ -364,16 +408,16 @@
       font-weight: 500;
       transition: color 0.15s;
     }
-
     .status-links a:hover { color: var(--text); }
 
-    /* Load animation */
+    /* ===== ANIMATIONS ===== */
     .card { opacity: 0; animation: cardIn 0.4s ease forwards; }
-    .card:nth-child(1) { animation-delay: 0.05s; }
-    .card:nth-child(2) { animation-delay: 0.1s; }
-    .card:nth-child(3) { animation-delay: 0.15s; }
-    .card:nth-child(4) { animation-delay: 0.2s; }
-    .card:nth-child(5) { animation-delay: 0.25s; }
+    .card:nth-child(1) { animation-delay: 0.03s; }
+    .card:nth-child(2) { animation-delay: 0.06s; }
+    .card:nth-child(3) { animation-delay: 0.09s; }
+    .card:nth-child(4) { animation-delay: 0.12s; }
+    .card:nth-child(5) { animation-delay: 0.15s; }
+    .card:nth-child(6) { animation-delay: 0.18s; }
 
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -420,46 +464,87 @@
   </div>
 
   <div class="container">
+    <div class="grid-2">
 
-    <!-- Skip Segments -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Skip Segments</h2>
-        <span class="tag tag-free">Free</span>
+      <!-- ===== SKIP SEGMENTS ===== -->
+      <div class="card full-width">
+        <div class="card-head">
+          <h2><span class="dot dot-red"></span> Skip Segments</h2>
+          <span class="tag tag-free">Free</span>
+        </div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div><div class="row-info"><h3>Intros</h3></div><label class="toggle"><input type="checkbox" data-setting="skipIntro"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></div><div class="row-info"><h3>Outros</h3></div><label class="toggle"><input type="checkbox" data-setting="skipOutro"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div><div class="row-info"><h3>Sponsors</h3></div><label class="toggle"><input type="checkbox" data-setting="skipSponsor"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1l5 3V6L5 9H4zm5.03 1.71L11 9.53v4.94l-1.97-1.18-.48-.29H4v-2h4.55l.48-.29zM14.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></div><div class="row-info"><h3>Self-Promo</h3></div><label class="toggle"><input type="checkbox" data-setting="skipSelfpromo"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></div><div class="row-info"><h3>Reminders</h3></div><label class="toggle"><input type="checkbox" data-setting="skipInteraction"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></div><div class="row-info"><h3>Filler</h3></div><label class="toggle"><input type="checkbox" data-setting="skipFiller"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg></div><div class="row-info"><h3>Preview / Recap</h3></div><label class="toggle"><input type="checkbox" data-setting="skipPreview"><span class="track"></span></label></div>
+        <div class="row row-sm"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4zm7 8c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zm-2.5 0c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63z"/></svg></div><div class="row-info"><h3>Non-Music</h3></div><label class="toggle"><input type="checkbox" data-setting="skipMusicOfftopic"><span class="track"></span></label></div>
       </div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg></div><div class="row-info"><h3>Skip Intros</h3><p>Auto-skip video intro sequences</p></div><label class="toggle"><input type="checkbox" data-setting="skipIntro"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></div><div class="row-info"><h3>Skip Outros</h3><p>Skip end screens and outro segments</p></div><label class="toggle"><input type="checkbox" data-setting="skipOutro"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div><div class="row-info"><h3>Skip Sponsors</h3><p>Skip sponsored segments (SponsorBlock)</p></div><label class="toggle"><input type="checkbox" data-setting="skipSponsor"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1l5 3V6L5 9H4zm5.03 1.71L11 9.53v4.94l-1.97-1.18-.48-.29H4v-2h4.55l.48-.29zM14.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></div><div class="row-info"><h3>Skip Self-Promotion</h3><p>Merch mentions, channel promos</p></div><label class="toggle"><input type="checkbox" data-setting="skipSelfpromo"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></div><div class="row-info"><h3>Skip Reminders</h3><p>Subscribe &amp; like prompts</p></div><label class="toggle"><input type="checkbox" data-setting="skipInteraction"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></div><div class="row-info"><h3>Skip Filler</h3><p>Tangents &amp; off-topic content</p></div><label class="toggle"><input type="checkbox" data-setting="skipFiller"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg></div><div class="row-info"><h3>Skip Preview / Recap</h3><p>Recaps &amp; previews of upcoming content</p></div><label class="toggle"><input type="checkbox" data-setting="skipPreview"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4zm7 8c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zm-2.5 0c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63z"/></svg></div><div class="row-info"><h3>Skip Non-music</h3><p>Talking segments in music videos</p></div><label class="toggle"><input type="checkbox" data-setting="skipMusicOfftopic"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-red"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div><div class="row-info"><h3>Ad Blocking</h3><p>Automatically detect and skip video ads</p></div><label class="toggle"><input type="checkbox" data-setting="adSkip"><span class="track"></span></label></div>
-    </div>
 
-    <!-- Playback -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Playback</h2>
-        <span class="tag tag-free">Free</span>
+      <!-- ===== AD BLOCKING ===== -->
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="dot dot-orange"></span> Ad Blocking</h2>
+          <span class="tag tag-free">Free</span>
+        </div>
+        <div class="row"><div class="row-icon ic-orange"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div><div class="row-info"><h3>Skip Video Ads</h3><p>Auto-detect and skip ads</p></div><label class="toggle"><input type="checkbox" data-setting="adSkip"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-orange"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div><div class="row-info"><h3>Dismiss Popups</h3><p>"Still watching?" auto-dismiss</p></div><label class="toggle"><input type="checkbox" data-setting="autoDismissPopups"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-orange"><svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg></div><div class="row-info"><h3>Hide Premium Upsells</h3><p>Remove "Get Premium" banners</p></div><label class="toggle"><input type="checkbox" data-setting="hidePremiumUpsells"><span class="track"></span></label></div>
       </div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-.75v1.5h-1.5V15H14c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v4zm-3.5-.5h2v-3h-2v3z"/></svg></div><div class="row-info"><h3>Max Quality</h3><p>Always set highest available resolution</p></div><label class="toggle"><input type="checkbox" data-setting="autoMaxQuality"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></div><div class="row-info"><h3>Picture-in-Picture</h3><p>Toggle PiP with Alt+P keyboard shortcut</p></div><label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div><div class="row-info"><h3>Auto PiP on Tab Switch</h3><p>Automatically enter PiP when leaving the tab</p></div><label class="toggle"><input type="checkbox" data-setting="pipAutoSwitch"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/></svg></div><div class="row-info"><h3>Background Play</h3><p>Keep audio playing when the tab is hidden</p></div><label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div><div class="row-info"><h3>Auto-dismiss Popups</h3><p>Dismiss "Are you still watching?" prompts automatically</p></div><label class="toggle"><input type="checkbox" data-setting="autoDismissPopups"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg></div><div class="row-info"><h3>Hide Premium Upsells</h3><p>Hide "Get YouTube Premium" banners and promos</p></div><label class="toggle"><input type="checkbox" data-setting="hidePremiumUpsells"><span class="track"></span></label></div>
-      <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></div><div class="row-info"><h3>Continuous Play</h3><p>Prevent YouTube from pausing during long sessions</p></div><label class="toggle"><input type="checkbox" data-setting="continuousPlay"><span class="track"></span></label></div>
-    </div>
 
+      <!-- ===== PLAYBACK ===== -->
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="dot dot-blue"></span> Playback</h2>
+          <span class="tag tag-free">Free</span>
+        </div>
+        <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-.75v1.5h-1.5V15H14c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v4zm-3.5-.5h2v-3h-2v3z"/></svg></div><div class="row-info"><h3>Max Quality</h3><p>Always highest resolution</p></div><label class="toggle"><input type="checkbox" data-setting="autoMaxQuality"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></div><div class="row-info"><h3>Picture-in-Picture</h3><p>Alt+P shortcut</p></div><label class="toggle"><input type="checkbox" data-setting="pipEnabled"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div><div class="row-info"><h3>Auto PiP on Tab Switch</h3><p>PiP when leaving the tab</p></div><label class="toggle"><input type="checkbox" data-setting="pipAutoSwitch"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/></svg></div><div class="row-info"><h3>Background Play</h3><p>Audio continues in background</p></div><label class="toggle"><input type="checkbox" data-setting="backgroundPlay"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></div><div class="row-info"><h3>Continuous Play</h3><p>Prevent long-session pauses</p></div><label class="toggle"><input type="checkbox" data-setting="continuousPlay"><span class="track"></span></label></div>
+      </div>
+
+      <!-- ===== AUDIO ===== -->
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="dot dot-green"></span> Audio</h2>
+          <span class="tag tag-free">Free</span>
+        </div>
+        <div class="row"><div class="row-icon ic-green"><svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div><div class="row-info"><h3>Bass Boost</h3><p>+6dB low-frequency at 200Hz</p></div><label class="toggle"><input type="checkbox" data-setting="bassBoost"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-green"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></div><div class="row-info"><h3>Audio Normalizer</h3><p>Consistent volume across videos</p></div><label class="toggle"><input type="checkbox" data-setting="audioNormalizer"><span class="track"></span></label></div>
+      </div>
+
+      <!-- ===== VISUAL ===== -->
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="dot dot-purple"></span> Visual Effects</h2>
+          <span class="tag tag-free">Free</span>
+        </div>
+        <div class="row"><div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg></div><div class="row-info"><h3>Cinematic Mode</h3><p>Ambient glow around the player</p></div><label class="toggle"><input type="checkbox" data-setting="cinematicMode"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M7 5h10v2h2V3c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v4h2V5zm8.41 11.59L20 12l-4.59-4.59L14 8.83 17.17 12 14 15.17l1.41 1.42zM10 15.17L6.83 12 10 8.83 8.59 7.41 4 12l4.59 4.59L10 15.17zM17 19H7v-2H5v4c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-4h-2v2z"/></svg></div><div class="row-info"><h3>Video Sharpening</h3><p>CSS-powered unsharp mask filter</p></div><label class="toggle"><input type="checkbox" data-setting="videoSharpening"><span class="track"></span></label></div>
+        <div class="slider-row"><div class="row-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg></div><div class="row-info"><h3>Sharpening Strength</h3></div><input type="range" min="0" max="1" step="0.1" data-setting="sharpeningStrength" value="0.5"><span class="slider-val" id="sharpening-value">0.5</span></div>
+      </div>
+
+      <!-- ===== CONTROLS ===== -->
+      <div class="card">
+        <div class="card-head">
+          <h2><span class="dot dot-cyan"></span> Controls &amp; Info</h2>
+          <span class="tag tag-free">Free</span>
+        </div>
+        <div class="row"><div class="row-icon ic-cyan"><svg viewBox="0 0 24 24"><path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/></svg></div><div class="row-info"><h3>Keyboard Shortcuts</h3><p>Speed [ ] , frame step , . , hold right arrow</p></div><label class="toggle"><input type="checkbox" data-setting="keyboardShortcuts"><span class="track"></span></label></div>
+        <div class="row"><div class="row-icon ic-cyan"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H5V7h7v10z"/></svg></div><div class="row-info"><h3>Video Stats Overlay</h3><p>Resolution, FPS, codec with Alt+S</p></div><label class="toggle"><input type="checkbox" data-setting="videoStats"><span class="track"></span></label></div>
+      </div>
+
+    </div>
   </div>
 
   <!-- Statusbar -->
   <div class="statusbar">
     <span class="status-msg" id="statusMsg">Settings saved</span>
     <div class="status-links">
-      <a href="https://github.com/binay-py/youtube-premium" target="_blank">GitHub</a>
+      <a href="https://github.com/user/premiumtube" target="_blank">GitHub</a>
       <a href="https://sponsor.ajay.app" target="_blank">SponsorBlock</a>
     </div>
   </div>

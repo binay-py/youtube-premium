@@ -20,10 +20,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     statTime.textContent = seconds + 's';
   }
 
+  // Range inputs (sliders)
+  const rangeInputs = document.querySelectorAll('input[type="range"][data-setting]');
+
   function applySettings() {
     toggles.forEach(toggle => {
       const key = toggle.dataset.setting;
       toggle.checked = !!settings[key];
+    });
+
+    rangeInputs.forEach(range => {
+      const key = range.dataset.setting;
+      if (settings[key] !== undefined) {
+        range.value = settings[key];
+        // Update display label if exists
+        const label = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '') + '-value')
+          || document.getElementById('sharpening-value');
+        if (label && key === 'sharpeningStrength') label.textContent = settings[key];
+      }
     });
   }
 
@@ -34,6 +48,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       const key = toggle.dataset.setting;
       settings[key] = toggle.checked;
       await chrome.storage.sync.set({ [key]: toggle.checked });
+      showStatus('Settings saved');
+    });
+  });
+
+  rangeInputs.forEach(range => {
+    range.addEventListener('input', async () => {
+      const key = range.dataset.setting;
+      const value = parseFloat(range.value);
+      settings[key] = value;
+      await chrome.storage.sync.set({ [key]: value });
+      // Update display label
+      if (key === 'sharpeningStrength') {
+        const label = document.getElementById('sharpening-value');
+        if (label) label.textContent = value;
+      }
       showStatus('Settings saved');
     });
   });

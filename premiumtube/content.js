@@ -383,6 +383,11 @@
     setupAutoDismiss();
     setupHidePremiumUpsells();
     setupContinuousPlay();
+    setupKeyboardShortcuts();
+    setupVideoStats();
+    setupAudioEnhancement();
+    setupCinematicMode();
+    setupVideoSharpening();
     attach();
     log('Ready!', '#30d158');
   }
@@ -400,7 +405,10 @@
       skipPreview: true, skipFiller: true, adSkip: true,
       pipEnabled: true, pipAutoSwitch: true,
       backgroundPlay: true, autoMaxQuality: true,
-      autoDismissPopups: true, hidePremiumUpsells: true, continuousPlay: true
+      autoDismissPopups: true, hidePremiumUpsells: true, continuousPlay: true,
+      keyboardShortcuts: true, videoStats: false,
+      bassBoost: false, audioNormalizer: false,
+      cinematicMode: false, videoSharpening: false, sharpeningStrength: 0.5
     };
   }
 
@@ -412,10 +420,17 @@
       // React to feature toggles that need setup/teardown
       if (k === 'adSkip' && newValue && !oldVal) setupAdBlocker();
       if (k === 'autoMaxQuality' && newValue) applyMaxQuality();
+      if (k === 'autoMaxQuality' && !newValue) cleanupQualityMonitor();
       if (k === 'autoDismissPopups' && newValue) setupAutoDismiss();
       if (k === 'hidePremiumUpsells' && newValue) setupHidePremiumUpsells();
       if (k === 'hidePremiumUpsells' && !newValue) removeHidePremiumUpsells();
       if (k === 'continuousPlay' && newValue) setupContinuousPlay();
+      if (k === 'bassBoost' || k === 'audioNormalizer') updateAudioGraph();
+      if (k === 'cinematicMode' && newValue && !oldVal) startCinematic();
+      if (k === 'cinematicMode' && !newValue) stopCinematic();
+      if (k === 'videoSharpening' && newValue && !oldVal) startSharpening();
+      if (k === 'videoSharpening' && !newValue) stopSharpening();
+      if (k === 'sharpeningStrength') updateSharpeningStrength();
     }
   });
 
@@ -462,6 +477,10 @@
     removeSeekbarMarkers();
     stopControlsObserver();
     cleanupLocalDetection();
+    cleanupSpeedIndicator();
+    removeStatsOverlay();
+    stopCinematic();
+    stopSharpening();
     currentVideoId = id;
     skipSegments = [];
     delete musicVideoCache[id]; // reset music detection for fresh check
@@ -587,6 +606,24 @@
 
       if (isAdPlaying()) {
         handleVideoAd();
+      } else {
+        // Safety net: if no ad is playing, ensure video isn't stuck in a bad state
+        // from a previous ad handler that didn't clean up properly
+        const v = getVid();
+        if (v) {
+          // Restore mute/speed if ad handler left things dirty
+          if (adHandlerActive) {
+            restoreVideoState();
+            log('Safety net: cleared stale ad handler state', '#ff9f0a');
+          }
+          // If video is muted but shouldn't be (no ad, user didn't mute)
+          // playbackRate stuck at non-1 from ad skip
+          if (v.playbackRate > 1 && v.playbackRate !== 2) {
+            // 2x might be user-set, but 16x is definitely from ad handler
+            v.playbackRate = 1;
+            log('Safety net: reset stuck playback rate', '#ff9f0a');
+          }
+        }
       }
 
       // Remove overlay ads aggressively
@@ -648,26 +685,47 @@
   }
 
 
+  function restoreVideoState() {
+    // Safety: always restore normal playback state
+    // Re-query the video element — YouTube may have swapped it during ad transition
+    const v = getVid();
+    if (v) {
+      v.muted = false;
+      v.playbackRate = 1;
+    }
+    adHandlerActive = false;
+  }
+
   function handleVideoAd() {
     if (adHandlerActive) return; // prevent concurrent handlers
     adHandlerActive = true;
 
-    const v = getVid();
-    if (!v) { adHandlerActive = false; return; }
+    // Double-check: confirm ad is truly playing before taking action
+    // This avoids false positives from transient class changes
+    const player = getPlayer();
+    if (!player || (!player.classList.contains('ad-showing') && !player.classList.contains('ad-interrupting'))) {
+      adHandlerActive = false;
+      return;
+    }
 
     log('Ad detected! Attempting to skip...', '#ff9f0a');
+
+    // Cinematic mode auto-pauses during ads via its own isAdPlaying() check
+
+    // Always re-query video element — YouTube can swap it for ads
+    const v = getVid();
+    if (!v) { adHandlerActive = false; return; }
 
     // Mute immediately so user doesn't hear the ad
     v.muted = true;
 
     // Try clicking skip button immediately
     if (tryClickSkip()) {
-      v.muted = false;
-      adHandlerActive = false;
+      restoreVideoState();
       return;
     }
 
-    // Keep trying every 200ms
+    // Keep trying every 300ms
     let attempts = 0;
     const skipInterval = setInterval(() => {
       attempts++;
@@ -678,9 +736,15 @@
 
       if (!stillAd) {
         clearInterval(skipInterval);
-        adHandlerActive = false;
-        v.muted = false;
-        v.playbackRate = 1;
+        restoreVideoState();
+        // Ensure video resumes after ad ends — re-query fresh element
+        setTimeout(() => {
+          const vid = getVid();
+          if (vid && vid.paused && !vid.ended && vid.readyState >= 2) {
+            vid.play().catch(() => {});
+            log('Resumed video after ad', '#30d158');
+          }
+        }, 500);
         log('Ad ended', '#30d158');
         return;
       }
@@ -688,25 +752,22 @@
       // Try clicking skip button every tick
       if (tryClickSkip()) {
         clearInterval(skipInterval);
-        adHandlerActive = false;
-        v.muted = false;
-        v.playbackRate = 1;
+        restoreVideoState();
         return;
       }
 
-      // Only apply aggressive strategies to SHORT videos (ads are < 120s)
-      // This prevents accidentally skipping/speeding up real content
-      if (v.duration && isFinite(v.duration) && v.duration < 120) {
-        // Strategy 1: Seek near end of ad (not to exact end — that triggers next video)
-        if (v.duration > 0.5) {
-          v.currentTime = v.duration - 0.1;
+      // Always re-query video — YouTube may swap during ad
+      const currentV = getVid();
+      if (!currentV) { /* no video element */ }
+      else if (currentV.duration && isFinite(currentV.duration) && currentV.duration < 120) {
+        // Only apply aggressive strategies to SHORT videos (ads are < 120s)
+        if (currentV.duration > 0.5) {
+          currentV.currentTime = currentV.duration - 0.1;
         }
-
-        // Strategy 2: Speed up playback
-        try { v.playbackRate = 16; } catch (e) {}
+        try { currentV.playbackRate = 16; } catch (e) {}
       }
 
-      // Strategy 3: Try YouTube's player API (safe — only works on actual ads)
+      // Strategy: Try YouTube's player API (safe — only works on actual ads)
       if (attempts === 3 || attempts === 15) {
         try {
           if (player && typeof player.skipAd === 'function') {
@@ -716,15 +777,13 @@
         } catch (e) {}
       }
 
-      // Safety: give up after 30s (150 attempts at 200ms)
-      if (attempts > 150) {
+      // Safety: give up after 15s (50 attempts at 300ms)
+      if (attempts > 50) {
         clearInterval(skipInterval);
-        adHandlerActive = false;
-        v.muted = false;
-        v.playbackRate = 1;
+        restoreVideoState();
         log('Ad handler timeout — gave up', '#ff9f0a');
       }
-    }, 200);
+    }, 300);
   }
 
   function tryClickSkip() {
@@ -2146,8 +2205,10 @@
 
   function setupBgPlay() {
     document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.ytp-play-button');
-      if (btn) {
+      // Detect clicks on the play button, video itself, or video container
+      const playBtn = e.target.closest('.ytp-play-button');
+      const videoClick = e.target.closest('video, .html5-video-container');
+      if (playBtn || videoClick) {
         const v = getVid();
         if (v && !v.paused) userPaused = true;
         else userPaused = false;
@@ -2186,15 +2247,27 @@
   }
 
   // ==================== AUTO MAX QUALITY ====================
-
-  const QUALITY_ORDER = [
-    'highres', 'hd2880', 'hd2160', 'hd1440', 'hd1080',
-    'hd720', 'large', 'medium', 'small', 'tiny'
-  ];
+  // Quality setting is done via bridge.js (MAIN world) since YouTube's player
+  // API methods are only accessible from the page's JS context, not from
+  // the content script's isolated world.
 
   let qualityTimer = null;
 
   function setupAutoQuality() {
+    // Listen for quality results from bridge.js
+    document.addEventListener('pt-quality-result', (e) => {
+      const d = e.detail || {};
+      if (d.status === 'set') {
+        log(`Quality: ${d.previous || '?'} → ${d.target} (available: ${d.available})`, '#30d158');
+        // Start monitor to keep quality locked
+        setTimeout(() => {
+          document.dispatchEvent(new CustomEvent('pt-start-quality-monitor'));
+        }, 1000);
+      } else if (d.status === 'already-max') {
+        log(`Quality: already at max (${d.target})`, '#30d158');
+      }
+    });
+
     // Apply quality on every video change via yt-navigate-finish
     window.addEventListener('yt-navigate-finish', () => {
       if (settings.autoMaxQuality) applyMaxQuality();
@@ -2209,68 +2282,22 @@
 
     let attempts = 0;
     const trySet = () => {
-      const player = document.querySelector('#movie_player');
-      if (!player || typeof player.getAvailableQualityLevels !== 'function') {
-        if (++attempts < 40) return; // keep trying via interval
+      // Check if bridge has reported available qualities yet
+      const bridge = document.getElementById('pt-stats-bridge');
+      const availStr = bridge?.getAttribute('data-available-qualities') || '';
+
+      if (!availStr) {
+        if (++attempts < 40) return; // keep trying
         clearInterval(qualityTimer); qualityTimer = null;
         return;
       }
 
-      const available = player.getAvailableQualityLevels();
-      if (!available || !available.length) {
-        if (++attempts < 40) return;
-        clearInterval(qualityTimer); qualityTimer = null;
-        return;
-      }
-
-      // Pick the highest available quality
-      let best = available[0]; // already sorted highest-first by YouTube
-      for (const q of QUALITY_ORDER) {
-        if (available.includes(q)) { best = q; break; }
-      }
-
-      // Get current quality
-      const current = typeof player.getPlaybackQuality === 'function'
-        ? player.getPlaybackQuality() : null;
-
-      if (current === best) {
-        // Already at max — stop trying
-        clearInterval(qualityTimer); qualityTimer = null;
-        return;
-      }
-
-      // Set quality using available methods
-      if (typeof player.setPlaybackQualityRange === 'function') {
-        player.setPlaybackQualityRange(best, best);
-      }
-      if (typeof player.setPlaybackQuality === 'function') {
-        player.setPlaybackQuality(best);
-      }
-
-      log(`Quality: ${current || '?'} → ${best} (available: ${available.join(', ')})`, '#30d158');
-
-      // Verify it stuck after a moment
-      setTimeout(() => {
-        if (!settings.autoMaxQuality) return;
-        const p = document.querySelector('#movie_player');
-        if (!p || typeof p.getPlaybackQuality !== 'function') return;
-        const now = p.getPlaybackQuality();
-        if (now !== best) {
-          // YouTube overrode it — try again
-          if (typeof p.setPlaybackQualityRange === 'function') {
-            p.setPlaybackQualityRange(best, best);
-          }
-          if (typeof p.setPlaybackQuality === 'function') {
-            p.setPlaybackQuality(best);
-          }
-          log(`Quality re-applied: ${now} → ${best}`, '#ff9f0a');
-        }
-      }, 3000);
-
+      // Bridge has qualities available — tell it to set max
       clearInterval(qualityTimer); qualityTimer = null;
+      document.dispatchEvent(new CustomEvent('pt-set-max-quality'));
     };
 
-    // Try via interval only (avoids race with immediate call)
+    // Poll until bridge is ready, then dispatch
     qualityTimer = setInterval(trySet, 500);
   }
 
@@ -2378,8 +2405,10 @@
     // Track user-initiated pauses
     document.addEventListener('click', (e) => {
       if (!settings.continuousPlay) return;
+      // Detect clicks on the play button, the video itself, or the video container
       const playBtn = e.target.closest('.ytp-play-button');
-      if (playBtn) {
+      const videoClick = e.target.closest('video, .html5-video-container');
+      if (playBtn || videoClick) {
         const v = getVid();
         if (v && !v.paused) continuousUserPaused = true;
         else continuousUserPaused = false;
@@ -2406,6 +2435,7 @@
       }
 
       let lastAutoResume = 0;
+      let resumeTimeout = null;
       v.addEventListener('pause', () => {
         if (!settings.continuousPlay) return;
         if (continuousUserPaused) return;
@@ -2417,19 +2447,32 @@
         const p = getPlayer();
         if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return;
 
-        // Cooldown: don't auto-resume more than once every 3 seconds
+        // Don't resume if video is buffering (readyState < HAVE_FUTURE_DATA)
+        if (v.readyState < 3) return;
+
+        // Cooldown: don't auto-resume more than once every 5 seconds
         // This prevents play/pause loops where YouTube and our code fight
         const now = Date.now();
-        if (now - lastAutoResume < 3000) return;
+        if (now - lastAutoResume < 5000) return;
 
-        // Longer delay to distinguish YouTube-initiated pauses from user actions
-        setTimeout(() => {
+        // Clear any pending resume — only the latest pause event matters
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+
+        // Long delay (2s) to distinguish YouTube-initiated pauses from user actions
+        // Most user pauses happen intentionally; YouTube's "are you still watching"
+        // pauses are the ones we want to override, and they can wait 2s
+        resumeTimeout = setTimeout(() => {
+          resumeTimeout = null;
+          // Re-check all conditions after the delay
           if (v.paused && !v.ended && !continuousUserPaused && settings.continuousPlay) {
+            // Re-check ad state
+            const p2 = getPlayer();
+            if (p2 && (p2.classList.contains('ad-showing') || p2.classList.contains('ad-interrupting'))) return;
             lastAutoResume = Date.now();
             v.play().catch(() => {});
             log('Continuous play: resumed YouTube-paused video', '#30d158');
           }
-        }, 500);
+        }, 2000);
       });
 
       v.addEventListener('play', () => {
@@ -2480,6 +2523,537 @@
 
     continuousPlayObserver.observe(document.body, { childList: true, subtree: true });
     log('Continuous play enabled', '#5ac8fa');
+  }
+
+  // ==================== KEYBOARD SHORTCUTS ====================
+
+  let speedIndicatorEl = null;
+  let speedIndicatorTimer = null;
+  let holdFastForward = false;
+  let holdOriginalRate = 1;
+  let shortcutKeydownHandler = null;
+  let shortcutKeyupHandler = null;
+
+  function isTyping() {
+    const a = document.activeElement;
+    if (!a) return false;
+    return a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable
+      || a.closest('[contenteditable="true"]');
+  }
+
+  function showSpeedIndicator(text) {
+    const player = getPlayer();
+    if (!player) return;
+
+    if (!speedIndicatorEl) {
+      speedIndicatorEl = document.createElement('div');
+      speedIndicatorEl.id = 'pt-speed-indicator';
+      player.appendChild(speedIndicatorEl);
+    }
+
+    speedIndicatorEl.textContent = text;
+    speedIndicatorEl.classList.add('pt-speed-visible');
+
+    clearTimeout(speedIndicatorTimer);
+    speedIndicatorTimer = setTimeout(() => {
+      if (speedIndicatorEl) speedIndicatorEl.classList.remove('pt-speed-visible');
+    }, 800);
+  }
+
+  function cleanupSpeedIndicator() {
+    clearTimeout(speedIndicatorTimer);
+    if (speedIndicatorEl) { speedIndicatorEl.remove(); speedIndicatorEl = null; }
+  }
+
+  function setupKeyboardShortcuts() {
+    if (shortcutKeydownHandler) return;
+
+    shortcutKeydownHandler = (e) => {
+      if (!settings.keyboardShortcuts) return;
+      if (isTyping()) return;
+
+      const v = getVid();
+      if (!v) return;
+
+      switch (e.key) {
+        case ']': {
+          e.preventDefault(); e.stopPropagation();
+          v.playbackRate = Math.min(16, v.playbackRate + 0.25);
+          showSpeedIndicator(v.playbackRate + 'x');
+          break;
+        }
+        case '[': {
+          e.preventDefault(); e.stopPropagation();
+          v.playbackRate = Math.max(0.25, v.playbackRate - 0.25);
+          showSpeedIndicator(v.playbackRate + 'x');
+          break;
+        }
+        case 'Backspace': {
+          e.preventDefault(); e.stopPropagation();
+          v.playbackRate = 1;
+          showSpeedIndicator('1x');
+          break;
+        }
+        case ',': {
+          if (v.paused) {
+            e.preventDefault(); e.stopPropagation();
+            v.currentTime = Math.max(0, v.currentTime - (1 / 30));
+          }
+          break;
+        }
+        case '.': {
+          if (v.paused) {
+            e.preventDefault(); e.stopPropagation();
+            v.currentTime = Math.min(v.duration, v.currentTime + (1 / 30));
+          }
+          break;
+        }
+        case 'ArrowRight': {
+          if (e.repeat && !holdFastForward) {
+            holdFastForward = true;
+            holdOriginalRate = v.playbackRate;
+            v.playbackRate = 2;
+            showSpeedIndicator('2x >>');
+          }
+          break;
+        }
+      }
+    };
+
+    shortcutKeyupHandler = (e) => {
+      if (e.key === 'ArrowRight' && holdFastForward) {
+        holdFastForward = false;
+        const v = getVid();
+        if (v) {
+          v.playbackRate = holdOriginalRate;
+          showSpeedIndicator(holdOriginalRate + 'x');
+        }
+      }
+    };
+
+    document.addEventListener('keydown', shortcutKeydownHandler);
+    document.addEventListener('keyup', shortcutKeyupHandler);
+    log('Keyboard shortcuts enabled', '#5ac8fa');
+  }
+
+  // ==================== AUTO QUALITY MONITOR ====================
+  // Quality monitoring is handled by bridge.js in the MAIN world.
+  // Content script just starts/stops it via custom events.
+
+  function cleanupQualityMonitor() {
+    document.dispatchEvent(new CustomEvent('pt-stop-quality-monitor'));
+  }
+
+  // ==================== AUDIO ENHANCEMENT ====================
+
+  let audioCtx = null;
+  let audioSourceNode = null;
+  let audioConnectedVideo = null;
+  let bassFilter = null;
+  let compressor = null;
+
+  function setupAudioEnhancement() {
+    // Defer actual initialization until user gesture
+    const initOnGesture = () => {
+      document.removeEventListener('click', initOnGesture);
+      document.removeEventListener('keydown', initOnGesture);
+      initAudioContext();
+    };
+    document.addEventListener('click', initOnGesture);
+    document.addEventListener('keydown', initOnGesture);
+    log('Audio enhancement ready (waiting for user gesture)', '#5ac8fa');
+  }
+
+  function initAudioContext() {
+    if (audioCtx) return;
+
+    const v = getVid();
+    if (!v) return;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Bass boost filter (lowshelf at 200Hz)
+      bassFilter = audioCtx.createBiquadFilter();
+      bassFilter.type = 'lowshelf';
+      bassFilter.frequency.value = 200;
+      bassFilter.gain.value = settings.bassBoost ? 6 : 0;
+
+      // Dynamic range compressor
+      compressor = audioCtx.createDynamicsCompressor();
+      if (settings.audioNormalizer) {
+        compressor.threshold.value = -24;
+        compressor.ratio.value = 12;
+        compressor.knee.value = 30;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
+      } else {
+        compressor.threshold.value = 0;
+        compressor.ratio.value = 1;
+      }
+
+      // Connect: source → bassFilter → compressor → destination
+      audioSourceNode = audioCtx.createMediaElementSource(v);
+      audioConnectedVideo = v;
+      audioSourceNode.connect(bassFilter);
+      bassFilter.connect(compressor);
+      compressor.connect(audioCtx.destination);
+
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      log('Audio context initialized (bass: ' + (settings.bassBoost ? 'ON' : 'OFF') +
+        ', normalizer: ' + (settings.audioNormalizer ? 'ON' : 'OFF') + ')', '#30d158');
+    } catch (e) {
+      log('Audio context error: ' + e.message, 'red');
+    }
+  }
+
+  function updateAudioGraph() {
+    if (!audioCtx || !bassFilter || !compressor) {
+      // If context doesn't exist yet, try to create it
+      if (settings.bassBoost || settings.audioNormalizer) {
+        initAudioContext();
+      }
+      return;
+    }
+
+    // Reconnect if video element changed
+    const v = getVid();
+    if (v && v !== audioConnectedVideo) {
+      try {
+        audioSourceNode = audioCtx.createMediaElementSource(v);
+        audioConnectedVideo = v;
+        audioSourceNode.connect(bassFilter);
+        log('Audio reconnected to new video element', '#5ac8fa');
+      } catch (e) {
+        log('Audio reconnect failed: ' + e.message, '#ff9f0a');
+      }
+    }
+
+    // Update bass boost
+    bassFilter.gain.value = settings.bassBoost ? 6 : 0;
+
+    // Update normalizer
+    if (settings.audioNormalizer) {
+      compressor.threshold.value = -24;
+      compressor.ratio.value = 12;
+      compressor.knee.value = 30;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.25;
+    } else {
+      compressor.threshold.value = 0;
+      compressor.ratio.value = 1;
+    }
+
+    log('Audio graph updated (bass: ' + (settings.bassBoost ? '+6dB' : '0dB') +
+      ', normalizer: ' + (settings.audioNormalizer ? 'ON' : 'OFF') + ')', '#30d158');
+  }
+
+  // ==================== VIDEO STATS OVERLAY ====================
+
+  let statsOverlayEl = null;
+  let statsInterval = null;
+  let statsVisible = false;
+  let lastTotalFrames = 0;
+  let lastFrameTime = 0;
+
+  function setupVideoStats() {
+    // Alt+S handled in keyboard shortcut system
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key.toLowerCase() === 's' && settings.videoStats) {
+        e.preventDefault();
+        toggleStatsOverlay();
+      }
+    });
+    log('Video stats ready (Alt+S to toggle)', '#5ac8fa');
+  }
+
+  function toggleStatsOverlay() {
+    if (statsVisible) {
+      removeStatsOverlay();
+    } else {
+      createStatsOverlay();
+    }
+  }
+
+  function createStatsOverlay() {
+    removeStatsOverlay();
+
+    const player = getPlayer();
+    if (!player) return;
+
+    statsOverlayEl = document.createElement('div');
+    statsOverlayEl.id = 'pt-stats-overlay';
+    player.appendChild(statsOverlayEl);
+
+    requestAnimationFrame(() => statsOverlayEl.classList.add('pt-stats-visible'));
+
+    lastTotalFrames = 0;
+    lastFrameTime = performance.now();
+
+    statsInterval = setInterval(updateStats, 1000);
+    updateStats();
+    statsVisible = true;
+    log('Stats overlay shown', '#5ac8fa');
+  }
+
+  function updateStats() {
+    if (!statsOverlayEl) return;
+    const v = getVid();
+    if (!v) return;
+
+    // bridge.js (MAIN world) writes YouTube API data to this DOM element
+    const bridge = document.getElementById('pt-stats-bridge');
+
+    // Resolution
+    const res = `${v.videoWidth || '?'} x ${v.videoHeight || '?'}`;
+
+    // Quality — read from bridge, fallback to video height
+    let quality = bridge?.getAttribute('data-quality') || '';
+    if (!quality || quality === 'unknown') {
+      const h = v.videoHeight;
+      if (h >= 2160) quality = '4K (2160p)';
+      else if (h >= 1440) quality = '1440p';
+      else if (h >= 1080) quality = '1080p';
+      else if (h >= 720) quality = '720p';
+      else if (h >= 480) quality = '480p';
+      else if (h >= 360) quality = '360p';
+      else if (h > 0) quality = h + 'p';
+      else quality = 'N/A';
+    }
+
+    // FPS
+    let fps = 'N/A';
+    let dropped = 'N/A';
+    try {
+      const vq = v.getVideoPlaybackQuality?.();
+      if (vq) {
+        const now = performance.now();
+        const elapsed = (now - lastFrameTime) / 1000;
+        if (elapsed > 0 && lastTotalFrames > 0) {
+          fps = Math.round((vq.totalVideoFrames - lastTotalFrames) / elapsed);
+        }
+        lastTotalFrames = vq.totalVideoFrames;
+        lastFrameTime = now;
+        dropped = vq.droppedVideoFrames;
+      }
+    } catch (e) {}
+
+    // Buffer health
+    let buffer = 'N/A';
+    try {
+      if (v.buffered.length > 0) {
+        const buffEnd = v.buffered.end(v.buffered.length - 1);
+        buffer = (buffEnd - v.currentTime).toFixed(1) + 's';
+      }
+    } catch (e) {}
+
+    // Codec & Bitrate — read from bridge
+    let codec = bridge?.getAttribute('data-codec') || 'N/A';
+    let bitrate = 'N/A';
+    const rawBitrate = bridge?.getAttribute('data-bitrate');
+    if (rawBitrate) {
+      const kbps = Math.round(parseInt(rawBitrate, 10) / 1000);
+      bitrate = kbps >= 1000 ? (kbps / 1000).toFixed(1) + ' Mbps' : kbps + ' kbps';
+    }
+
+    const rate = v.playbackRate + 'x';
+
+    statsOverlayEl.textContent =
+      `Resolution : ${res}\n` +
+      `Quality    : ${quality}\n` +
+      `FPS        : ${fps}\n` +
+      `Dropped    : ${dropped}\n` +
+      `Buffer     : ${buffer}\n` +
+      `Codec      : ${codec}\n` +
+      `Speed      : ${rate}\n` +
+      `Bitrate    : ${bitrate}`;
+  }
+
+  function removeStatsOverlay() {
+    if (statsInterval) { clearInterval(statsInterval); statsInterval = null; }
+    if (statsOverlayEl) {
+      statsOverlayEl.classList.remove('pt-stats-visible');
+      const el = statsOverlayEl;
+      statsOverlayEl = null;
+      setTimeout(() => el.remove(), 300);
+    }
+    statsVisible = false;
+  }
+
+  // ==================== CINEMATIC MODE (Ambient Lighting) ====================
+
+  let cinematicCanvas = null;
+  let cinematicCtx = null;
+  let cinematicGlow = null;
+  let cinematicInterval = null;
+  let cinematicCorsPaused = false;
+
+  function setupCinematicMode() {
+    if (settings.cinematicMode) {
+      setTimeout(() => { if (settings.cinematicMode) startCinematic(); }, 2000);
+    }
+  }
+
+  function startCinematic() {
+    stopCinematic();
+
+    const v = getVid();
+    const player = getPlayer();
+    if (!v || !player) return;
+
+    // Sampling canvas — 32x18 for better color accuracy than 16x9
+    cinematicCanvas = document.createElement('canvas');
+    cinematicCanvas.width = 32;
+    cinematicCanvas.height = 18;
+    cinematicCanvas.style.display = 'none';
+    cinematicCtx = cinematicCanvas.getContext('2d', { willReadFrequently: true });
+
+    // Glow element — insert inside the player (already position:relative)
+    // so we don't need to modify any parent elements
+    cinematicGlow = document.createElement('div');
+    cinematicGlow.id = 'pt-ambient-glow';
+    player.appendChild(cinematicGlow);
+
+    cinematicCorsPaused = false;
+
+    // Use setInterval at the actual sample rate instead of RAF at 60fps
+    cinematicInterval = setInterval(() => {
+      if (!settings.cinematicMode) { stopCinematic(); return; }
+
+      const vid = getVid();
+      if (!vid || vid.paused || vid.readyState < 2) return;
+
+      // Skip during ads — ad video is cross-origin and taints the canvas
+      if (isAdPlaying()) {
+        cinematicCorsPaused = true;
+        if (cinematicGlow) cinematicGlow.style.opacity = '0';
+        return;
+      }
+
+      // After ad ends, reset the canvas to clear tainted state
+      if (cinematicCorsPaused) {
+        cinematicCorsPaused = false;
+        cinematicCanvas.width = 32; // resets canvas state, clears taint
+        cinematicCtx = cinematicCanvas.getContext('2d', { willReadFrequently: true });
+        if (cinematicGlow) cinematicGlow.style.opacity = '';
+      }
+
+      try {
+        cinematicCtx.drawImage(vid, 0, 0, 32, 18);
+        const data = cinematicCtx.getImageData(0, 0, 32, 18).data;
+
+        // Sample edges (2-pixel deep strips on each side)
+        const top = sampleEdge(data, 32, 0, 0, 32, 2);
+        const bottom = sampleEdge(data, 32, 0, 16, 32, 18);
+        const left = sampleEdge(data, 32, 0, 0, 3, 18);
+        const right = sampleEdge(data, 32, 29, 0, 32, 18);
+
+        if (cinematicGlow) {
+          cinematicGlow.style.boxShadow =
+            `0 -40px 70px 40px rgba(${top.r},${top.g},${top.b},0.65), ` +
+            `0 40px 70px 40px rgba(${bottom.r},${bottom.g},${bottom.b},0.65), ` +
+            `-40px 0 70px 40px rgba(${left.r},${left.g},${left.b},0.55), ` +
+            `40px 0 70px 40px rgba(${right.r},${right.g},${right.b},0.55)`;
+        }
+      } catch (e) {
+        // CORS — pause sampling, don't permanently kill it
+        cinematicCorsPaused = true;
+        if (cinematicGlow) cinematicGlow.style.opacity = '0';
+        log('Cinematic: CORS hit, pausing until next content video', '#ff9f0a');
+      }
+    }, 200); // 5fps — exactly the rate we need
+
+    log('Cinematic mode started', '#bf5af2');
+  }
+
+  function sampleEdge(data, imgWidth, x1, y1, x2, y2) {
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let y = y1; y < y2; y++) {
+      for (let x = x1; x < x2; x++) {
+        const i = (y * imgWidth + x) * 4;
+        r += data[i]; g += data[i + 1]; b += data[i + 2];
+        count++;
+      }
+    }
+    if (count === 0) return { r: 0, g: 0, b: 0 };
+    return { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) };
+  }
+
+  function stopCinematic() {
+    if (cinematicInterval) { clearInterval(cinematicInterval); cinematicInterval = null; }
+    if (cinematicGlow) { cinematicGlow.remove(); cinematicGlow = null; }
+    if (cinematicCanvas) { cinematicCanvas.remove(); cinematicCanvas = null; }
+    cinematicCtx = null;
+    cinematicCorsPaused = false;
+  }
+
+  // ==================== VIDEO SHARPENING (CSS/SVG Filter) ====================
+  // Uses an SVG feConvolveMatrix filter applied via CSS — no canvas, no WebGL,
+  // no hiding the video. GPU-accelerated by the browser automatically.
+
+  let sharpeningStyleEl = null;
+  let sharpeningSvgEl = null;
+
+  function setupVideoSharpening() {
+    if (settings.videoSharpening) {
+      setTimeout(() => { if (settings.videoSharpening) startSharpening(); }, 2000);
+    }
+  }
+
+  function startSharpening() {
+    stopSharpening();
+
+    const v = getVid();
+    if (!v) return;
+
+    const rawStrength = settings.sharpeningStrength || 0.5;
+
+    // Quadratic curve: gentle at low values, stronger at high
+    // 0.0 → 0.0, 0.25 → 0.03, 0.5 → 0.13, 0.75 → 0.28, 1.0 → 0.5
+    const strength = rawStrength * rawStrength * 0.5;
+
+    // Unsharp mask kernel: center = 1 + 4*s, edges = -s
+    const center = (1 + 4 * strength).toFixed(3);
+    const edge = (-strength).toFixed(3);
+
+    sharpeningSvgEl = document.createElement('div');
+    sharpeningSvgEl.id = 'pt-sharpen-svg';
+    sharpeningSvgEl.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+    sharpeningSvgEl.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg">
+        <filter id="pt-sharpen-filter" color-interpolation-filters="sRGB">
+          <feConvolveMatrix order="3" preserveAlpha="true"
+            kernelMatrix="0 ${edge} 0 ${edge} ${center} ${edge} 0 ${edge} 0" />
+        </filter>
+      </svg>`;
+    document.body.appendChild(sharpeningSvgEl);
+
+    // Apply CSS filter to the video element
+    sharpeningStyleEl = document.createElement('style');
+    sharpeningStyleEl.id = 'pt-sharpen-style';
+    sharpeningStyleEl.textContent = `
+      video.html5-main-video,
+      #movie_player video {
+        filter: url(#pt-sharpen-filter) !important;
+      }
+    `;
+    document.head.appendChild(sharpeningStyleEl);
+
+    log('Video sharpening started (strength: ' + strength + ')', '#30d158');
+  }
+
+  function updateSharpeningStrength() {
+    if (!sharpeningSvgEl) return;
+    // Rebuild the filter with new strength
+    if (settings.videoSharpening) {
+      startSharpening(); // restarts with new strength
+    }
+  }
+
+  function stopSharpening() {
+    if (sharpeningStyleEl) { sharpeningStyleEl.remove(); sharpeningStyleEl = null; }
+    if (sharpeningSvgEl) { sharpeningSvgEl.remove(); sharpeningSvgEl = null; }
   }
 
   // ==================== START ====================

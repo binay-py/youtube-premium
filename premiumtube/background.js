@@ -29,6 +29,15 @@ const DEFAULT_SETTINGS = {
   hidePremiumUpsells: true,
   continuousPlay: true,
 
+  // Enhancement features
+  keyboardShortcuts: true,
+  videoStats: false,
+  bassBoost: false,
+  audioNormalizer: false,
+  cinematicMode: false,
+  videoSharpening: false,
+  sharpeningStrength: 0.5,
+
 };
 
 // Initialize default settings on install
@@ -61,6 +70,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
+
 
 });
 
