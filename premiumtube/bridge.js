@@ -147,17 +147,21 @@
         try { p.setPlaybackQuality(best); } catch (e) {}
       }
 
-      // Method 3: Internal API via wrappedJSObject or direct property
-      try {
-        if (p.wrappedJSObject && typeof p.wrappedJSObject.setPlaybackQualityRange === 'function') {
-          p.wrappedJSObject.setPlaybackQualityRange(best, best);
-        }
-      } catch (e) {}
-
-      // Method 4: Click-through the settings menu as last resort
-      try {
-        setQualityViaMenu(best, available);
-      } catch (e) {}
+      // Method 3: click through the settings menu - genuine last resort.
+      //
+      // This one is visible to the user: it opens YouTube's settings panel,
+      // clicks into Quality, picks an option and closes again. Firing it
+      // unconditionally made the panel flash open on every single video even
+      // when the programmatic calls above had already worked. So we give the
+      // player a moment to apply the change and only fall back if it didn't
+      // take.
+      setTimeout(function () {
+        try {
+          var now = (typeof p.getPlaybackQuality === 'function') ? (p.getPlaybackQuality() || '') : '';
+          if (now === best) return;  // methods 1/2 worked - leave the menu alone
+          setQualityViaMenu(best, available);
+        } catch (e) {}
+      }, 600);
 
       reportResult('set', best, available, current);
       return true;
@@ -300,9 +304,15 @@
     }
   });
 
-  // Update immediately and every 2 seconds
+  // Update immediately, then every 2 seconds. The poll skips its work
+  // entirely when there's no player on the page - YouTube's home, search,
+  // channel and Shorts pages have no #movie_player, and walking
+  // getPlayerResponse()/adaptiveFormats there was pure overhead.
   update();
-  setInterval(update, 2000);
+  setInterval(function () {
+    if (!getPlayer()) return;
+    update();
+  }, 2000);
 
   // Also update on navigation
   window.addEventListener('yt-navigate-finish', update);

@@ -4,8 +4,28 @@
 const SPONSORBLOCK_API = 'https://sponsor.ajay.app/api/skipSegments';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
-// In-memory cache for skip segments (cleared when service worker restarts)
+// In-memory cache for skip segments.
+//
+// Note on lifetime: an MV3 service worker is torn down after roughly 30s
+// idle, and this Map dies with it. CACHE_DURATION is therefore an upper
+// bound, not a guarantee - in practice entries survive only as long as the
+// worker does. That is fine for the case this exists for (rapid replays and
+// seeking within one video), so the cache stays in memory rather than
+// paying a storage round-trip on every lookup.
+//
+// MAX_CACHE_ENTRIES bounds the Map for the case where the worker DOES stay
+// alive through a long watch session.
+const MAX_CACHE_ENTRIES = 100;
 const segmentCache = new Map();
+
+/** Insert, evicting the oldest entry once the cache is full. Map preserves
+ *  insertion order, so the first key is the oldest. */
+function cacheSet(videoId, segments) {
+  if (segmentCache.size >= MAX_CACHE_ENTRIES) {
+    segmentCache.delete(segmentCache.keys().next().value);
+  }
+  segmentCache.set(videoId, { segments, timestamp: Date.now() });
+}
 
 // Default settings applied on first install
 const DEFAULT_SETTINGS = {
@@ -95,7 +115,7 @@ async function fetchSkipSegments(videoId) {
 
     if (response.status === 404) {
       // No segments found for this video - cache empty result
-      segmentCache.set(videoId, { segments: [], timestamp: Date.now() });
+      cacheSet(videoId, []);
       return [];
     }
 
@@ -113,7 +133,7 @@ async function fetchSkipSegments(videoId) {
     }));
 
     // Cache the result
-    segmentCache.set(videoId, { segments, timestamp: Date.now() });
+    cacheSet(videoId, segments);
     console.log(`[PremiumTube] Fetched ${segments.length} segments for ${videoId}`);
 
     return segments;
@@ -123,12 +143,8 @@ async function fetchSkipSegments(videoId) {
   }
 }
 
-// Clean up old cache entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of segmentCache) {
-    if (now - value.timestamp > CACHE_DURATION) {
-      segmentCache.delete(key);
-    }
-  }
-}, 5 * 60 * 1000); // Every 5 minutes
+// (No periodic cleanup timer here on purpose: a setInterval registered at
+//  the top level of an MV3 service worker does not keep the worker alive,
+//  so a 5-minute sweep would almost never fire - the worker is long dead by
+//  then, taking the whole Map with it. Staleness is handled at read time by
+//  the CACHE_DURATION check, and size by the eviction in cacheSet.)

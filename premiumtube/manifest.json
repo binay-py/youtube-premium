@@ -15,11 +15,9 @@
   "host_permissions": [
     "*://*.youtube.com/*",
     "*://sponsor.ajay.app/*",
-    "*://*.googlevideo.com/*",
     "*://*.doubleclick.net/*",
     "*://*.googlesyndication.com/*",
     "*://*.googleadservices.com/*",
-    "*://*.google-analytics.com/*",
     "*://*.adsense.google.com/*"
   ],
   "declarative_net_request": {
@@ -36,14 +34,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://www.youtube.com/*"],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "matches": [
+        "*://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["*://www.youtube.com/*"],
-      "js": ["bridge.js"],
+      "matches": [
+        "*://www.youtube.com/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
       "run_at": "document_idle",
       "world": "MAIN"
     }
