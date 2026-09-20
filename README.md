@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/premiumtube-skip.gif" alt="A video timeline with colour-coded SponsorBlock segments; the playhead jumps each one as it is detected, with four detectors running in parallel." width="100%">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Manifest-V3-blue" alt="Manifest V3"/>
   <img src="https://img.shields.io/badge/Chrome-88%2B-green" alt="Chrome 88+"/>
   <img src="https://img.shields.io/badge/Price-Free-brightgreen" alt="Free"/>
