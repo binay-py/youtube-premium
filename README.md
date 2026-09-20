@@ -1,17 +1,16 @@
-# PremiumTube - YouTube Premium Features for Free
+# PremiumTube — YouTube Premium features, free
 
 <p align="center">
   <img src="premiumtube/icons/icon128.png" alt="PremiumTube" width="80"/>
 </p>
 
 <p align="center">
-  <strong>Auto-skip sponsors, intros, ads & more. Background play, PiP, max quality — all free.</strong>
+  <strong>Auto-skip sponsors, intros and ads. Background play, PiP, max quality.</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Manifest-V3-blue" alt="Manifest V3"/>
   <img src="https://img.shields.io/badge/Chrome-88%2B-green" alt="Chrome 88+"/>
-  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="MIT License"/>
   <img src="https://img.shields.io/badge/Price-Free-brightgreen" alt="Free"/>
 </p>
 
@@ -19,10 +18,11 @@
 
 ## Features
 
-### Skip Segments
+### Skip segments
+
 | Feature | Description |
 |---------|-------------|
-| **Skip Intros** | Automatically skips video intro sequences |
+| **Skip Intros** | Skips video intro sequences |
 | **Skip Outros** | Skips end screens & credit rolls |
 | **Skip Sponsors** | Skips sponsored segments via [SponsorBlock](https://sponsor.ajay.app) |
 | **Skip Self-Promo** | Skips merch mentions & channel promos |
@@ -31,122 +31,152 @@
 | **Skip Preview/Recap** | Skips recaps & previews of upcoming content |
 | **Skip Non-music** | Skips talking segments in music videos |
 
-### Ad Blocking
-- Automatically detects and skips video ads
-- Blocks ad network requests via Declarative Net Request
+### Ad blocking
+
+- Detects and skips video ads
+- Blocks ad network requests via Declarative Net Request (34 rules)
 - Hides ad overlays and banners
 - Mutes audio during unskippable ads
 - Handles anti-adblock popups
 
-### Playback Enhancements
+### Playback
+
 | Feature | Description |
 |---------|-------------|
-| **Max Quality** | Automatically sets highest available resolution (4K/1440p/1080p) |
-| **Picture-in-Picture** | Toggle PiP with `Alt+P` shortcut |
-| **Auto PiP on Tab Switch** | Automatically enters PiP when you leave the tab |
-| **Background Play** | Audio continues playing when the tab is hidden |
-| **Continuous Play** | Prevents YouTube from pausing during long sessions |
-| **Auto-dismiss Popups** | Dismisses "Are you still watching?" prompts |
+| **Max Quality** | Sets the highest available resolution automatically |
+| **Picture-in-Picture** | Toggle with `Alt+P` |
+| **Auto PiP on Tab Switch** | Enters PiP when you leave the tab |
+| **Background Play** | Audio continues when the tab is hidden |
+| **Continuous Play** | Stops YouTube pausing during long sessions |
+| **Auto-dismiss Popups** | Clears "Are you still watching?" prompts |
 | **Hide Premium Upsells** | Removes "Get YouTube Premium" banners |
 
-### Smart Detection (4 Methods)
-PremiumTube uses multiple detection methods running in parallel for maximum accuracy:
+### Off by default
 
-1. **SponsorBlock API** — Community-driven database of skip segments
-2. **YouTube Chapters** — Parses chapter metadata from video data
-3. **Description Timestamps** — Scans video descriptions for labeled timestamps
-4. **Captions/Transcript** — Analyzes YouTube captions with keyword matching
+These ship disabled — turn them on in Settings:
 
-### UI Features
-- Skip button with countdown timer and progress bar
-- Upcoming segment preview (shows 12 seconds before)
-- Colored seekbar markers on the YouTube timeline
-- YouTube-style toast notifications
-- Category-colored segment indicators
+| Feature | What it does |
+|---------|--------------|
+| **Video Stats** | Overlay with live quality, codec and bitrate |
+| **Bass Boost** | Web Audio low-shelf filter |
+| **Audio Normalizer** | Evens out loudness across videos |
+| **Cinematic Mode** | Ambient lighting glow around the player |
+| **Video Sharpening** | SVG convolution filter, strength adjustable |
+
+### Detection: four methods in parallel
+
+1. **SponsorBlock API** — community skip-segment database
+2. **YouTube Chapters** — parsed from `ytInitialData`
+3. **Description Timestamps** — scans the description for labeled times
+4. **Captions/Transcript** — keyword matching over the caption track
+
+Plus a separate end-screen detector that reads YouTube metadata, falling back to the DOM.
+
+### UI
+
+- Skip button with countdown and progress bar
+- Upcoming-segment preview, 12 seconds ahead
+- Colored markers on the seekbar
+- YouTube-style toasts
 
 ---
 
-## Installation
+## Install
 
-### From Source (Developer Mode)
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/binay-py/youtube-premium.git
-   ```
-2. Open Chrome and go to `chrome://extensions`
-3. Enable **Developer mode** (top right toggle)
-4. Click **Load unpacked**
-5. Select the `premiumtube` folder
-6. Visit YouTube — the extension is active
+```bash
+git clone https://github.com/binay-py/youtube-premium.git
+```
+
+1. Open `chrome://extensions`
+2. Enable **Developer mode** (top right)
+3. **Load unpacked**
+4. Select the **`premiumtube`** folder — not the repo root
+5. Open YouTube
 
 ### Updating
+
 ```bash
 git pull origin main
 ```
-Then click the refresh icon on `chrome://extensions` for the PremiumTube card.
+
+Then hit reload on the PremiumTube card in `chrome://extensions`.
 
 ---
 
 ## Usage
 
-### Popup
-Click the PremiumTube icon in your toolbar to:
-- View stats (segments skipped, time saved)
-- Toggle individual features on/off
-- Access more skip options via expandable sections
-- Open the full Settings page
+Click the toolbar icon for stats and quick toggles. Right-click the icon → **Options**, or **Settings** in the popup, for everything else.
 
-### Keyboard Shortcuts
 | Shortcut | Action |
 |----------|--------|
 | `Alt+P` | Toggle Picture-in-Picture |
-| `Enter` | Manually skip current segment |
-
-### Settings Page
-Right-click the extension icon → **Options**, or click **Settings** in the popup for the full configuration page with all toggles.
+| `Enter` | Skip the current segment manually |
 
 ---
 
-## How It Works
+## How it works
 
 ```
-YouTube Page Load
+YouTube page load
        │
-       ├── content.js injects into youtube.com
-       │     ├── Fetches SponsorBlock segments
-       │     ├── Parses chapter data from ytInitialData
-       │     ├── Scans description for timestamps
-       │     ├── Analyzes captions for keywords
-       │     └── Polls video time every 200ms to trigger skips
+       ├── content.js  (isolated world, ~3,000 lines)
+       │     ├── Fetches SponsorBlock segments via the service worker
+       │     ├── Parses chapters from ytInitialData
+       │     ├── Scans the description for timestamps
+       │     ├── Keyword-matches the caption track
+       │     ├── Polls currentTime every 200ms to fire skips
+       │     └── Draws the skip button, preview and seekbar markers
        │
-       ├── background.js (Service Worker)
-       │     ├── Handles SponsorBlock API caching (30 min)
-       │     ├── Initializes default settings on install
-       │     └── Proxies API requests for content script
+       ├── bridge.js  (MAIN world)
+       │     ├── Reaches YouTube's #movie_player API, which the isolated
+       │     │   world cannot touch
+       │     ├── Reads quality / codec / bitrate, publishes them onto a
+       │     │   hidden DOM node for content.js to read back
+       │     └── Applies max quality, and keeps re-applying it
        │
-       ├── ad_rules.json (Declarative Net Request)
-       │     └── 30 rules blocking ad network domains
+       ├── background.js  (service worker)
+       │     ├── SponsorBlock fetches, with an in-memory cache
+       │     └── Seeds default settings on install
+       │
+       ├── ad_rules.json  (Declarative Net Request)
+       │     └── 34 static rules blocking ad endpoints
        │
        └── styles.css
-             └── Hides YouTube Premium upsells & ad elements
+             └── Hides Premium upsells and ad containers
 ```
+
+### Why two content scripts
+
+`content.js` runs in the **isolated world** — its own JS context, with access to the DOM and to `chrome.*`, but *not* to the page's own JavaScript objects. YouTube's player API (`getPlaybackQuality`, `setPlaybackQualityRange`, `getPlayerResponse`) lives on the page's `#movie_player` element and is only reachable from the page's context.
+
+So `bridge.js` is declared with `"world": "MAIN"`, runs alongside YouTube's own code, and the two halves talk through a hidden `<div id="pt-stats-bridge">` — `bridge.js` writes `data-*` attributes and dispatches `CustomEvent`s, `content.js` reads them. Neither can call the other directly.
+
+### Setting quality
+
+Three escalating methods, because YouTube's player has changed shape repeatedly:
+
+1. `setPlaybackQualityRange(best, best)` — works on current builds
+2. `setPlaybackQuality(best)` — legacy, still live on some
+3. Clicking through the settings menu — a real fallback, and deliberately only fired after a 600ms check confirms 1 and 2 didn't take. It's visible to the user, so it doesn't run unless it has to.
+
+A monitor then re-applies quality every 3s, up to 5 times, because YouTube likes to drop back to `auto` shortly after a navigation.
 
 ---
 
-## File Structure
+## File structure
 
 ```
 premiumtube/
-├── manifest.json        # Extension config (Manifest V3)
-├── content.js           # Main content script — segment detection, ad skip, PiP, quality
-├── background.js        # Service worker — API caching, settings init
-├── popup.html           # Extension popup UI
-├── popup.js             # Popup logic — toggles, stats, collapsible sections
-├── options.html         # Full settings page
-├── options.js           # Settings page logic
-├── styles.css           # Injected CSS for YouTube
-├── ad_rules.json        # Declarative Net Request ad blocking rules
+├── manifest.json        # Manifest V3 config
+├── content.js           # Isolated world — detection, skipping, UI, ad handling
+├── bridge.js            # MAIN world — player API access, quality control
+├── background.js        # Service worker — SponsorBlock fetch + cache, defaults
+├── popup.html/.js       # Toolbar popup — stats, quick toggles
+├── options.html/.js     # Full settings page
+├── styles.css           # Injected CSS
+├── ad_rules.json        # 34 Declarative Net Request rules
 └── icons/
+    ├── generate_icons.py
     ├── icon16.png
     ├── icon48.png
     └── icon128.png
@@ -154,58 +184,58 @@ premiumtube/
 
 ---
 
-## Mobile Users
-
-PremiumTube is a Chrome extension — it runs in desktop browsers. Chrome extensions can't work inside the YouTube mobile app. Here are alternatives for mobile:
-
-| Platform | App | Features | Link |
-|----------|-----|----------|------|
-| **Android** | **ReVanced** | Ad blocking, SponsorBlock, background play, PiP — patches the official YouTube APK | [github.com/ReVanced](https://github.com/ReVanced) |
-| **Android** | **NewPipe** | Lightweight YouTube client with SponsorBlock, background play, downloads | [newpipe.net](https://newpipe.net) |
-| **Android** | **Kiwi Browser** | Mobile browser that supports Chrome extensions — install PremiumTube directly | [Play Store](https://play.google.com/store/apps/details?id=com.kiwibrowser.browser) |
-| **iOS** | **uYou+** | Modified YouTube app with ad blocking & SponsorBlock (sideload via AltStore) | [github.com/qnblackcat/uYouPlus](https://github.com/qnblackcat/uYouPlus) |
-
----
-
 ## Permissions
 
 | Permission | Why |
 |-----------|-----|
-| `storage` | Save settings & stats across sessions |
-| `declarativeNetRequest` | Block ad network requests |
-| `*://*.youtube.com/*` | Operate on YouTube pages |
-| `*://sponsor.ajay.app/*` | Fetch SponsorBlock skip segments |
-| `*://*.googlevideo.com/*` | Block video ad delivery |
-| `*://*.doubleclick.net/*` | Block ad network |
-| `*://*.googlesyndication.com/*` | Block ad network |
-| `*://*.googleadservices.com/*` | Block ad network |
+| `storage` | Settings and stats |
+| `declarativeNetRequest` | Ad request blocking |
+| `*://*.youtube.com/*` | Operate on YouTube |
+| `*://sponsor.ajay.app/*` | Fetch SponsorBlock segments |
+| `*://*.doubleclick.net/*` | Ad network |
+| `*://*.googlesyndication.com/*` | Ad network |
+| `*://*.googleadservices.com/*` | Ad network |
+| `*://*.adsense.google.com/*` | Ad network |
+
+Content scripts are registered for `*://www.youtube.com/*` specifically, so `m.youtube.com` and `music.youtube.com` are not covered.
 
 ---
 
-## Tech Stack
+## Mobile
 
-- **Manifest V3** — Modern Chrome extension standard
-- **Vanilla JavaScript (ES6+)** — No frameworks, no build step
-- **Chrome Storage API** — Sync settings across devices
-- **Declarative Net Request** — Performant ad blocking
-- **SponsorBlock API** — Community skip segment data
-- **YouTube Internal Player API** — Quality & playback control
+PremiumTube is a Chrome extension and only runs in desktop browsers — extensions can't load inside the YouTube mobile app. Alternatives:
+
+| Platform | App | Notes |
+|----------|-----|-------|
+| **Android** | [ReVanced](https://github.com/ReVanced) | Patches the official APK — ads, SponsorBlock, background play, PiP |
+| **Android** | [NewPipe](https://newpipe.net) | Lightweight client with SponsorBlock and downloads |
+| **Android** | [Kiwi Browser](https://play.google.com/store/apps/details?id=com.kiwibrowser.browser) | Supports Chrome extensions — install PremiumTube directly |
+| **iOS** | [uYou+](https://github.com/qnblackcat/uYouPlus) | Modified YouTube app, sideload via AltStore |
+
+---
+
+## Known issues
+
+**Two ad rules touch YouTube's attestation endpoints** — `youtubei/v1/att/get` (rule 33) and `jnn-pa.googleapis.com` (rule 39). These belong to BotGuard, YouTube's anti-automation layer. Blocking them is common in ad-blocking lists, but it's also a known trigger for *"Sign in to confirm you're not a bot"* and for playback simply failing. If you hit either, remove those two rules from `ad_rules.json` first.
+
+**YouTube changes its DOM often.** Skip detection leans on selectors and on `ytInitialData` shape. When something stops working, that's usually why.
+
+---
+
+## Tech
+
+Manifest V3 · vanilla JS, no framework, no build step · `chrome.storage.sync` for settings, `.local` for stats · Declarative Net Request · SponsorBlock API · YouTube's internal player API via a MAIN-world bridge
 
 ---
 
 ## Credits
 
-- [SponsorBlock](https://sponsor.ajay.app) — Community-driven sponsor segment database
-- Built with vanilla JS, no dependencies
+- [SponsorBlock](https://sponsor.ajay.app) — community sponsor-segment database, by Ajay Ramachandran
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+Not currently licensed. All rights reserved — no `LICENSE` file has been added to this repository yet.
 
----
-
-<p align="center">
-  <strong>If PremiumTube saves you time, give it a star!</strong>
-</p>
+If you intend this to be open source, add a `LICENSE` file and update this section; until one exists, default copyright applies and others have no right to reuse the code.
