@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/Manifest-V3-blue" alt="Manifest V3"/>
   <img src="https://img.shields.io/badge/Chrome-88%2B-green" alt="Chrome 88+"/>
   <img src="https://img.shields.io/badge/Price-Free-brightgreen" alt="Free"/>
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="MIT License"/>
 </p>
 
 ---
@@ -240,6 +241,4 @@ Manifest V3 · vanilla JS, no framework, no build step · `chrome.storage.sync` 
 
 ## License
 
-Not currently licensed. All rights reserved — no `LICENSE` file has been added to this repository yet.
-
-If you intend this to be open source, add a `LICENSE` file and update this section; until one exists, default copyright applies and others have no right to reuse the code.
+[MIT](LICENSE) — use it, fork it, ship it. Attribution appreciated, not required.
